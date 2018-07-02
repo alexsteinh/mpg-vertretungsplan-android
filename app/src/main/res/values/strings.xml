@@ -1,3 +1,11 @@
 <resources>
-    <string name="app_name">MPGVertretungsplan</string>
+    <string name="app_name">Vertretungsplan</string>
+    <string name="saved_grade">grade</string>
+    <string name="pref_title_grade">Klasse</string>
+    <string name="saved_first_time">first_time</string>
+    <string name="action_settings">Einstellungen</string>
+    <string name="no_replacements">Keine Vertretungen</string>
+    <string name="no_table">Der Vertretungsplan wurde noch nicht freigegeben</string>
+    <string name="no_internet">Keine Internetverbindung</string>
+    <string name="retry">Nochmal</string>
 </resources>
