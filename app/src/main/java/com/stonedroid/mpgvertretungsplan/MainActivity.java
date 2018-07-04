@@ -1,7 +1,5 @@
 package com.stonedroid.mpgvertretungsplan;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -19,6 +17,7 @@ import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
@@ -138,7 +137,7 @@ public class MainActivity extends AppCompatActivity
 
             // TODO: Write welcome logic
             log("First time!");
-            openSettings();
+            createWelcomeDialog().show();
         }
         else
         {
@@ -164,11 +163,21 @@ public class MainActivity extends AppCompatActivity
             }
             else
             {
-                openSettings();
+                openSettings(true);
             }
         }
     }
 
+    private AlertDialog createWelcomeDialog()
+    {
+        return new AlertDialog.Builder(this)
+                .setTitle(R.string.welcome)
+                .setMessage(R.string.welcome_message)
+                .setPositiveButton("OK", (dialog, which) -> openSettings(true))
+                .create();
+    }
+
+    // Returns a nice readable string like (01.01 - 05.01)
     private String getCalendarSpan(int plusWeeks)
     {
         Calendar calendar = Calendar.getInstance();
@@ -191,6 +200,7 @@ public class MainActivity extends AppCompatActivity
         return String.format("android:switcher:%s:%s", viewId, position);
     }
 
+    // Returns whether a network is available
     private boolean isNetworkAvailable()
     {
         ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -201,6 +211,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public Object onRetainCustomNonConfigurationInstance()
     {
+        // If the activity should be rebuild, the tables are cached and retrieved in the onCreate method
         return tables;
     }
 
@@ -217,7 +228,7 @@ public class MainActivity extends AppCompatActivity
         switch (item.getItemId())
         {
             case R.id.action_settings:
-                openSettings();
+                openSettings(false);
         }
 
         return super.onOptionsItemSelected(item);
@@ -352,15 +363,6 @@ public class MainActivity extends AppCompatActivity
             }
             else
             {
-                // Show that the ReplacementTable is not available
-                /*CardView card = createCard();
-                LinearLayout cardLayout = new LinearLayout(this);
-                cardLayout.setOrientation(LinearLayout.VERTICAL);
-                cardLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT));
-                cardLayout.addView(createNoTableView());
-                card.addView(cardLayout);
-                layout.addView(card);*/
                 layout.addView(createNoTableView());
             }
         }
@@ -529,9 +531,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     // Opens the preference screen
-    private void openSettings()
+    private void openSettings(boolean withDialog)
     {
-        startActivity(new Intent(this, SettingsActivity.class));
+        Intent intent = new Intent(this, SettingsActivity.class);
+        intent.putExtra("with_dialog", withDialog);
+        startActivity(intent);
     }
 
     // Convert density pixels to real pixels
