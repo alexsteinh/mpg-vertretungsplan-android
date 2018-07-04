@@ -16,4 +16,5 @@
     Der Sourcecode der App ist unter:\nhttps://github.com/alxndrx/mpg-vertretungsplan-android\neinsehbar</string>
     <string name="grade_message">Bitte wählen Ihre Klasse aus</string>
     <string name="general">Allgemein</string>
+    <string name="saved_offline_available">offline_available</string>
 </resources>

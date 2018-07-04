@@ -11,7 +11,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.support.design.widget.BaseTransientBottomBar;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
@@ -27,6 +26,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import de.stonedroid.vertretungsplan.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -35,13 +35,17 @@ public class MainActivity extends AppCompatActivity
     public static final String TAG = MainActivity.class.getSimpleName();
     public static final boolean DEBUG = true;
 
+    private static final String TABLE_1_BIN = "table1.dat";
+    private static final String TABLE_2_BIN = "table2.dat";
+
     // It's important to store this listener in a global field, otherwise gc will delete it.
     // (For some reasons, the android developers thought it was a good idea to store listeners in
     // a WeakHashMap, where objects without any connections to other objects are deleted.)
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
+    private SharedPreferences preferences;
 
-    private ReplacementTable[] tables;
-    private TableFragment[] fragments;
+    private ReplacementTable[] tables = null;
+    private TableFragment[] fragments = null;
     private CoordinatorLayout mainLayout;
 
     // Writes in the debug log if bool DEBUG is true
@@ -114,7 +118,7 @@ public class MainActivity extends AppCompatActivity
     private void onCreate2()
     {
         // Register listener to be noticed if user changes something in the settings
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
         preferenceChangeListener = (sharedPrefs, s) ->
         {
             // s = (String) key of the changed value
@@ -156,9 +160,22 @@ public class MainActivity extends AppCompatActivity
                 }
                 else
                 {
-                    // Download from internet
-                    log("Download tables");
-                    downloadTableAndShow(Grade.parse(grade));
+                    if (isNetworkAvailable())
+                    {
+                        // Download from internet
+                        log("Download tables");
+                        downloadTableAndShow(Grade.parse(grade));
+                    }
+                    else
+                    {
+                        // Is there an offline version available?
+                        boolean canDoOffline = preferences.getBoolean(getString(R.string.saved_offline_available), false);
+                        if (canDoOffline)
+                        {
+                            // Load ReplacementTables from internal storage
+                            loadTablesFromStorage(true);
+                        }
+                    }
                 }
             }
             else
@@ -166,6 +183,73 @@ public class MainActivity extends AppCompatActivity
                 openSettings(true);
             }
         }
+    }
+
+    @Override
+    protected void onStop()
+    {
+        super.onStop();
+        if (tables != null)
+        {
+            new Thread(() ->
+            {
+                try
+                {
+                    String path = getFilesDir().getAbsolutePath();
+                    if (!path.endsWith("/"))
+                    {
+                        path += "/";
+                    }
+
+                    log("Writing to " + path);
+                    // Save tables
+                    Utils.saveObject(tables[0], path + TABLE_1_BIN);
+                    Utils.saveObject(tables[1], path + TABLE_2_BIN);
+                    // Next time, we can open the offline view
+                    preferences.edit()
+                            .putBoolean(getString(R.string.saved_offline_available), true)
+                            .apply();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+    }
+
+    // Load tables async from storage
+    private void loadTablesFromStorage(boolean showTables)
+    {
+        new Thread(() ->
+        {
+            try
+            {
+                String path = getFilesDir().getAbsolutePath();
+                if (!path.endsWith("/"))
+                {
+                    path += "/";
+                }
+
+                log("Reading from " + path);
+                // Load tables
+                if (tables == null)
+                {
+                    tables = new ReplacementTable[2];
+                }
+
+                tables[0] = (ReplacementTable) Utils.loadObject(path + TABLE_1_BIN);
+                tables[1] = (ReplacementTable) Utils.loadObject(path + TABLE_2_BIN);
+                if (showTables)
+                {
+                    runOnUiThread(() -> showTables(tables));
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private AlertDialog createWelcomeDialog()
@@ -267,7 +351,7 @@ public class MainActivity extends AppCompatActivity
         else
         {
             // Network is not available...
-            Snackbar.make(mainLayout, R.string.no_internet, BaseTransientBottomBar.LENGTH_INDEFINITE)
+            Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
                     .setAction(R.string.retry, (view) -> downloadTableAndShow(grade))
                     .show();
         }
