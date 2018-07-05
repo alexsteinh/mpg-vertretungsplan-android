@@ -2,6 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+            app:showAsAction="always"
+            android:title="@string/action_reload"
+            android:id="@+id/action_reload"/>
+    <item
             app:showAsAction="never"
             android:title="@string/action_settings"
             android:id="@+id/action_settings"/>

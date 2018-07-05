@@ -1,5 +1,7 @@
 package com.stonedroid.mpgvertretungsplan;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -139,6 +141,12 @@ public class MainActivity extends AppCompatActivity
             editor.putBoolean(getString(R.string.saved_first_time), false);
             editor.apply();
 
+            /*// Setup notifications
+            Intent intent = new Intent(this, NotificationService.class);
+            PendingIntent sender = PendingIntent.getService(this, 0, intent, 0);
+            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 5000, AlarmManager.INTERVAL_HOUR, sender);*/
+
             // TODO: Write welcome logic
             log("First time!");
             createWelcomeDialog().show();
@@ -242,7 +250,11 @@ public class MainActivity extends AppCompatActivity
                 tables[1] = (ReplacementTable) Utils.loadObject(path + TABLE_2_BIN);
                 if (showTables)
                 {
-                    runOnUiThread(() -> showTables(tables));
+                    runOnUiThread(() ->
+                    {
+                        showTables(tables);
+                        Snackbar.make(mainLayout, R.string.offline_version, Snackbar.LENGTH_SHORT).show();
+                    });
                 }
             }
             catch (Exception e)
@@ -313,6 +325,17 @@ public class MainActivity extends AppCompatActivity
         {
             case R.id.action_settings:
                 openSettings(false);
+                break;
+            case R.id.action_reload:
+                Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), ""));
+                if (grade != null)
+                {
+                    downloadTableAndShow(grade);
+                }
+                else
+                {
+                    openSettings(true);
+                }
         }
 
         return super.onOptionsItemSelected(item);

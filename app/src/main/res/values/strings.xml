@@ -11,10 +11,16 @@
     <string name="welcome">Willkommen</string>
     <string name="welcome_message">Dies ist der 3. Anlauf der MPG-Vertretungsplan App mit praktischen Funktionen:\n
     - Benachrichtungen, welche dich über Änderungen vom Vertretungsplan infomieren\n
-    - Themes (im Moment: Orange, Dark)\n
     - und für die Oberstufe: Ein Kursfilter\n\n
     Der Sourcecode der App ist unter:\nhttps://github.com/alxndrx/mpg-vertretungsplan-android\neinsehbar</string>
     <string name="grade_message">Bitte wählen Ihre Klasse aus</string>
     <string name="general">Allgemein</string>
     <string name="saved_offline_available">offline_available</string>
+    <string name="notification_channel_name">Channel</string>
+    <string name="notification_channel_description">This channel provides notification about changes in the current ReplacementTable</string>
+    <string name="saved_notification_id">notification_id</string>
+    <string name="pref_category_filter">Filter (nur für die Oberstufe)</string>
+    <string name="saved_filter_enabled">filter_enabled</string>
+    <string name="action_reload">Neu laden</string>
+    <string name="offline_version">Zeige Offline-Version...</string>
 </resources>
