@@ -621,7 +621,7 @@ public class MainActivity extends AppCompatActivity
     private View createSpacer()
     {
         View view = new View(this);
-        view.setMinimumHeight(dpToPx(8));
+        view.setMinimumHeight(dpToPx(10));
         view.setBackgroundColor(Color.TRANSPARENT);
         return view;
     }
