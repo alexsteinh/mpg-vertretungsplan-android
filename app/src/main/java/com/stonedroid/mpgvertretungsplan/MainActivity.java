@@ -621,7 +621,7 @@ public class MainActivity extends AppCompatActivity
     private View createSpacer()
     {
         View view = new View(this);
-        view.setMinimumHeight(dpToPx(16));
+        view.setMinimumHeight(dpToPx(8));
         view.setBackgroundColor(Color.TRANSPARENT);
         return view;
     }
@@ -632,6 +632,7 @@ public class MainActivity extends AppCompatActivity
         CardView card = new CardView(this);
         //card.setMinimumHeight(dpToPx(32));
         card.setCardElevation(dpToPx(2));
+        card.setRadius(dpToPx(4));
         Drawable background = card.getBackground();
         background.setColorFilter(Color.parseColor("#fdecd9"), PorterDuff.Mode.SRC);
         return card;
