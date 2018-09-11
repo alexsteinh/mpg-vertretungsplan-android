@@ -23,9 +23,9 @@
     <string name="pref_category_filter">Filter (nur für die Oberstufe)</string>
     <string name="saved_filter_enabled">filter_enabled</string>
     <string name="action_reload">Neu laden</string>
-    <string name="offline_version">Zeige Offline-Version..</string>
+    <string name="offline_version">Zeige Offline-Version</string>
     <string name="pref_title_filter_enabled">Filter aktiv</string>
-    <string name="reloaded_table">Wurde neugeladen..</string>
+    <string name="reloaded_table">Vertretungsplan wurde neugeladen</string>
     <string name="pref_category_customizing">Individualisierung</string>
     <string name="pref_title_theme">Theme</string>
     <string name="saved_theme">theme</string>
