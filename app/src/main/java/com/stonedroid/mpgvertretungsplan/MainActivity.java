@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.TypedValue;
@@ -680,29 +681,36 @@ public class MainActivity extends AppCompatActivity
             // Setup text
             TextView text = new TextView(this);
             text.setLayoutParams(new ViewGroup.LayoutParams(textWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
-            if (i != data.length - 1)
+
+            if (i == data.length - 1)
             {
-                text.setTextColor(textColor);
-            }
-            else
-            {
-                // Dirty fix of "fÃ¤llt aus" in replacement message (don't know why this happens)
+                /*// Dirty fix of "fÃ¤llt aus" in replacement message (don't know why this happens)
                 if (data[i].equals("fÃ¤llt aus"))
                 {
                     data[i] = "fällt aus";
-                }
+                }*/
 
                 // Mark text red if the replacements indicates that something was cancelled
-                if (data[i].equals("fällt aus"))
+                if (data[i].contains("fällt aus"))
                 {
-                    text.setTextColor(importantTextColor);
+                    SpannableStringBuilder str = new SpannableStringBuilder(data[i]);
+                    ForegroundColorSpan color = new ForegroundColorSpan(importantTextColor);
+                    int start = data[i].indexOf("fällt aus");
+                    int end = start + "fällt aus".length();
+                    str.setSpan(color, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    text.setText(str);
                 }
                 else
                 {
-                    text.setTextColor(textColor);
+                    text.setText(data[i]);
                 }
             }
-            text.setText(data[i]);
+            else
+            {
+                text.setText(data[i]);
+            }
+
+            text.setTextColor(textColor);
             text.setGravity(Gravity.CENTER);
             view.addView(text);
         }
