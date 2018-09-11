@@ -1,5 +1,9 @@
 package com.stonedroid.mpgvertretungsplan;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 import java.io.*;
 
 public class Utils
@@ -23,5 +27,21 @@ public class Utils
         Object obj = ois.readObject();
         ois.close();
         return obj;
+    }
+
+    public static String setCustomTheme(Context context)
+    {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String themeName = prefs.getString(context.getString(R.string.saved_theme), "Orange");
+        switch (themeName)
+        {
+            case "Orange":
+                context.setTheme(R.style.OrangeTheme);
+                break;
+            case "Light":
+                context.setTheme(R.style.LightTheme);
+        }
+
+        return themeName;
     }
 }

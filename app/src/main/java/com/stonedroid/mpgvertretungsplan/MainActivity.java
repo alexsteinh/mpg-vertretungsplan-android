@@ -1,7 +1,7 @@
 package com.stonedroid.mpgvertretungsplan;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -22,15 +22,23 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.StyleSpan;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.*;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import de.stonedroid.vertretungsplan.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -50,6 +58,12 @@ public class MainActivity extends AppCompatActivity
     private TableFragment[] fragments = null;
     private CoordinatorLayout mainLayout;
 
+    private int tabTextColor;
+    private int textColor;
+    private int importantTextColor;
+    private int cardColor;
+    private int layoutColor;
+
     // Writes in the debug log if bool DEBUG is true
     private void log(String message)
     {
@@ -63,16 +77,33 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        // Set theme (with customizations)
+        String themeName = Utils.setCustomTheme(this);
+        switch (themeName)
+        {
+            case "Orange":
+                textColor = Color.BLACK;
+                importantTextColor = Color.RED;
+                tabTextColor = Color.WHITE;
+                cardColor = Color.parseColor("#fdecd9");
+                layoutColor = Color.parseColor("#f3f3f3");
+                break;
+            case "Weiß":
+                textColor = Color.BLACK;
+                importantTextColor = Color.RED;
+                tabTextColor = Color.BLACK;
+                cardColor = Color.WHITE;
+                layoutColor = Color.LTGRAY;
+        }
+
         setContentView(R.layout.activity_main);
-
-        /*Intent intent = new Intent(this, NotificationService.class);
-        PendingIntent sender = PendingIntent.getService(this, 0, intent, 0);
-
-        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0, 1000, sender);*/
 
         // Get mainLayout
         mainLayout = findViewById(R.id.main_layout);
+        mainLayout.setBackgroundColor(layoutColor);
 
         // Turn action bar elevation off and transfer elevation to TabLayout
         float elevation = 0;
@@ -108,6 +139,8 @@ public class MainActivity extends AppCompatActivity
                 fragments, titles));
 
         TabLayout tabLayout = findViewById(R.id.tab_layout);
+        tabLayout.setBackgroundColor(getThemePrimaryColor());
+        tabLayout.setTabTextColors(tabTextColor - (70 << 24), tabTextColor);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
             tabLayout.setElevation(elevation);
@@ -120,14 +153,27 @@ public class MainActivity extends AppCompatActivity
     private void onCreate2()
     {
         // Register listener to be noticed if user changes something in the settings
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
         preferenceChangeListener = (sharedPrefs, s) ->
         {
             // s = (String) key of the changed value
             log("Key of changed value: " + s);
             if (s.equals(getString(R.string.saved_grade)))
             {
-                downloadTableAndShow(Grade.parse(sharedPrefs.getString(s, "")));
+                // Load new table
+                downloadTableAndShow(Grade.parse(sharedPrefs.getString(s, "")), true);
+            }
+            else if(s.contains("filter_enabled"))
+            {
+                // Always show the table from scratch if filter settings were altered
+                if (tables != null)
+                {
+                    showTables(tables);
+                }
+            }
+            else if(s.equals("theme"))
+            {
+                // To change the theme, recreate the activity
+                recreate();
             }
         };
         preferences.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
@@ -141,19 +187,12 @@ public class MainActivity extends AppCompatActivity
             editor.putBoolean(getString(R.string.saved_first_time), false);
             editor.apply();
 
-            /*// Setup notifications
-            Intent intent = new Intent(this, NotificationService.class);
-            PendingIntent sender = PendingIntent.getService(this, 0, intent, 0);
-            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 5000, AlarmManager.INTERVAL_HOUR, sender);*/
-
-            // TODO: Write welcome logic
+            // TODO: Rewrite welcome dialog
             log("First time!");
             createWelcomeDialog().show();
         }
         else
         {
-            // TODO: Write normal logic
             log("Second time!");
             // Use user defined grade and download the grade
             String grade = preferences.getString(getString(R.string.saved_grade), null);
@@ -172,7 +211,7 @@ public class MainActivity extends AppCompatActivity
                     {
                         // Download from internet
                         log("Download tables");
-                        downloadTableAndShow(Grade.parse(grade));
+                        downloadTableAndShow(Grade.parse(grade), false);
                     }
                     else
                     {
@@ -194,9 +233,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onStop()
+    protected void onDestroy()
     {
-        super.onStop();
+        super.onDestroy();
         if (tables != null)
         {
             new Thread(() ->
@@ -330,7 +369,7 @@ public class MainActivity extends AppCompatActivity
                 Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), ""));
                 if (grade != null)
                 {
-                    downloadTableAndShow(grade);
+                    downloadTableAndShow(grade, true);
                 }
                 else
                 {
@@ -341,12 +380,14 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    private void downloadTableAndShow(Grade grade)
+    // Downloads both ReplacementTables (for this and the next week) async
+    // and adds them after downloading to the MainLayout
+    // without blocking the UI thread.
+    private void downloadTableAndShow(Grade grade, boolean reload)
     {
         // Check if we have a valid network connection
         if (isNetworkAvailable())
         {
-            // TODO: Rework for two fragments
             new Thread(() ->
             {
                 tables = new ReplacementTable[2];
@@ -368,14 +409,22 @@ public class MainActivity extends AppCompatActivity
                     log("Couldn't download ReplacementTable#2");
                 }
 
-                runOnUiThread(() -> showTables(tables));
+                runOnUiThread(() ->
+                {
+                    showTables(tables);
+                    if (reload)
+                    {
+                        Snackbar.make(mainLayout, getString(R.string.reloaded_table), Snackbar.LENGTH_SHORT)
+                                .show();
+                    }
+                });
             }).start();
         }
         else
         {
             // Network is not available...
             Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.retry, (view) -> downloadTableAndShow(grade))
+                    .setAction(R.string.retry, v -> downloadTableAndShow(grade, reload))
                     .show();
         }
     }
@@ -391,13 +440,7 @@ public class MainActivity extends AppCompatActivity
     // onto the the main layout of this activity.
     private void showTables(ReplacementTable[] tables)
     {
-        // TODO: Rework for two fragments
-        // Set AppBar title
-        ActionBar bar = getSupportActionBar();
-        if (bar != null)
-        {
-            bar.setTitle(String.format("Klasse %s", tables[0].getGrade().toString()));
-        }
+        boolean alreadyRenamedAppbar = false;
 
         for (int t = 0; t < tables.length; t++)
         {
@@ -408,8 +451,23 @@ public class MainActivity extends AppCompatActivity
             ReplacementTable table = tables[t];
             if (table != null)
             {
+                // Rename appbar title to possibly new grade
+                if (!alreadyRenamedAppbar)
+                {
+                    ActionBar bar = getSupportActionBar();
+                    if (bar != null)
+                    {
+                        bar.setTitle(String.format("Klasse %s", table.getGrade()));
+                    }
+
+                    alreadyRenamedAppbar = true;
+                }
+
                 // Get all necessary information
-                ArrayList<Replacement> replacements = new ArrayList<>(table.getReplacements());
+                ArrayList<Replacement> replacements = PreferenceManager.getDefaultSharedPreferences(this)
+                        .getBoolean(getString(R.string.saved_filter_enabled), false)
+                        ? filterReplacements(table.getReplacements())
+                        : new ArrayList<>(table.getReplacements());
                 ArrayList<Message> messages = new ArrayList<>(table.getMessages());
                 String[] dates = table.getDates();
                 String[] days = table.getDays();
@@ -431,14 +489,17 @@ public class MainActivity extends AppCompatActivity
                     String date = dates[i];
                     String day = days[i];
                     // Add date view to card
-                    cardLayout.addView(createDate(date, day));
+                    cardLayout.addView(createDateView(date, day));
                     // Replacements and Messages are sorted by date, which means that the first replacement/message
                     // in the list is always the earliest replacement/message
 
                     // Add messages
+                    boolean addedMessages = false;
+
                     while (!messages.isEmpty() && messages.get(0).getDate().equals(date))
                     {
                         cardLayout.addView(createMessageView(messages.remove(0)));
+                        addedMessages = true;
                     }
 
                     // Add replacements
@@ -454,6 +515,18 @@ public class MainActivity extends AppCompatActivity
 
                         cardLayout.addView(createLine());
                         cardLayout.addView(createReplacementView(replacements.remove(0)));
+                    }
+
+                    // If no replacements were added, but messages were added
+                    // add a tiny spacer so the message's TextView doesn't almost
+                    // touch the black line afterwards
+                    if (!addedCaption && addedMessages)
+                    {
+                        // Create small spacer between line and message to make it look better
+                        View view = new View(this);
+                        view.setBackgroundColor(Color.TRANSPARENT);
+                        view.setMinimumHeight(dpToPx(8));
+                        cardLayout.addView(view);
                     }
 
                     // If no replacements were added, add noReplacementsView
@@ -475,12 +548,45 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private ArrayList<Replacement> filterReplacements(List<Replacement> replacements)
+    {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        // Load all subject
+        Map<String, List<String>> subjects = Subject.getAllSubjects();
+        Set<String> subjectNames = subjects.keySet();
+
+        ArrayList<Replacement> filteredReplacements = new ArrayList<>();
+
+        for (Replacement replacement : replacements)
+        {
+            try
+            {
+                String subjectName = Subject.getSubjectName(replacement.getOldSubject());
+                // Look at userPrefs what to do next
+                String course = prefs.getString("filter_enabled_" + subjectName, null);
+                if (course == null || course.equals("Ignorieren") || course.equals(replacement.getOldSubject()))
+                {
+                    // Let it through the filter
+                    filteredReplacements.add(replacement);
+                }
+            }
+            catch (Exception e)
+            {
+                // Replacement's subject is not listed -> let it through the filter
+                filteredReplacements.add(replacement);
+            }
+        }
+
+        return filteredReplacements;
+    }
+
     private View createNoTableView()
     {
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(Color.BLACK);
+        text.setTextColor(textColor);
         text.setText(R.string.no_table);
         return text;
     }
@@ -501,7 +607,7 @@ public class MainActivity extends AppCompatActivity
         return container;
     }
 
-    // Creates a view with captions for the replacements
+    // Creates a view with table captions for the replacements
     private View createCaptionView()
     {
         // Setup container
@@ -523,7 +629,7 @@ public class MainActivity extends AppCompatActivity
             TextView text = new TextView(this);
             text.setLayoutParams(new ViewGroup.LayoutParams(textWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
             text.setTypeface(Typeface.DEFAULT_BOLD);
-            text.setTextColor(Color.BLACK);
+            text.setTextColor(textColor);
             text.setText(data[i]);
             text.setGravity(Gravity.CENTER);
             view.addView(text);
@@ -536,9 +642,8 @@ public class MainActivity extends AppCompatActivity
     private View createMessageView(Message message)
     {
         TextView text = new TextView(this);
-        text.setMinHeight(dpToPx(32));
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(Color.BLACK);
+        text.setTextColor(textColor);
         text.setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
         text.setText(message.getText());
         return text;
@@ -552,6 +657,16 @@ public class MainActivity extends AppCompatActivity
         view.setGravity(Gravity.CENTER);
         view.setOrientation(LinearLayout.HORIZONTAL);
         view.setMinimumHeight(dpToPx(32));
+
+        // TODO: Copy replacement to clipboard when onLongClick
+        view.setOnLongClickListener(v ->
+        {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("Vertretungsplan", replacement.toString());
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(this, "Vertretung wurde kopiert", Toast.LENGTH_SHORT).show();
+            return true;
+        });
         // Calculate width foreach text view
         int width = getResources().getDisplayMetrics().widthPixels - dpToPx(16);
         int maxWidth = width / 5;
@@ -567,18 +682,24 @@ public class MainActivity extends AppCompatActivity
             text.setLayoutParams(new ViewGroup.LayoutParams(textWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
             if (i != data.length - 1)
             {
-                text.setTextColor(Color.BLACK);
+                text.setTextColor(textColor);
             }
             else
             {
+                // Dirty fix of "fÃ¤llt aus" in replacement message (don't know why this happens)
+                if (data[i].equals("fÃ¤llt aus"))
+                {
+                    data[i] = "fällt aus";
+                }
+
                 // Mark text red if the replacements indicates that something was cancelled
                 if (data[i].equals("fällt aus"))
                 {
-                    text.setTextColor(Color.RED);
+                    text.setTextColor(importantTextColor);
                 }
                 else
                 {
-                    text.setTextColor(Color.BLACK);
+                    text.setTextColor(textColor);
                 }
             }
             text.setText(data[i]);
@@ -595,13 +716,13 @@ public class MainActivity extends AppCompatActivity
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(Color.BLACK);
+        text.setTextColor(textColor);
         text.setText(R.string.no_replacements);
         return text;
     }
 
     // Creates a view containing the replacement's/message's date
-    private View createDate(String date, String day)
+    private View createDateView(String date, String day)
     {
         // Make date look nice
         if (date.endsWith("."))
@@ -611,13 +732,19 @@ public class MainActivity extends AppCompatActivity
 
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
-        text.setTextColor(Color.BLACK);
-        text.setText(String.format("%s - %s", day, date));
+        text.setTextColor(textColor);
         text.setGravity(Gravity.CENTER);
+
+        // Make the day bold
+        String str = String.format("%s - %s", day, date);
+        SpannableStringBuilder txt = new SpannableStringBuilder(str);
+        txt.setSpan(new StyleSpan(Typeface.BOLD), 0, str.indexOf(" "), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        text.setText(txt);
         return text;
     }
 
-    // Creates a transparent view which is used to separate to cards
+    // Creates a transparent view which is used to separate the cards
     private View createSpacer()
     {
         View view = new View(this);
@@ -632,9 +759,9 @@ public class MainActivity extends AppCompatActivity
         CardView card = new CardView(this);
         //card.setMinimumHeight(dpToPx(32));
         card.setCardElevation(dpToPx(2));
-        card.setRadius(dpToPx(4));
+        card.setRadius(dpToPx(8));
         Drawable background = card.getBackground();
-        background.setColorFilter(Color.parseColor("#fdecd9"), PorterDuff.Mode.SRC);
+        background.setColorFilter(cardColor, PorterDuff.Mode.SRC);
         return card;
     }
 
@@ -650,5 +777,12 @@ public class MainActivity extends AppCompatActivity
     private int dpToPx(float dp)
     {
         return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    public int getThemePrimaryColor()
+    {
+        TypedValue value = new TypedValue();
+        getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
+        return value.data;
     }
 }

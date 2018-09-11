@@ -11,6 +11,8 @@ public class SettingsActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
+        Utils.setCustomTheme(this);
+
         // Show grade dialog, if user is forced to pick a class
         Bundle extras = getIntent().getExtras();
         if (extras.getBoolean("with_dialog"))
