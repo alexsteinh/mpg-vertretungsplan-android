@@ -142,7 +142,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         // Display changelog if user updated to a newer version
-        if (versionCode > preferences.getInt(getString(R.string.saved_version_code), Integer.MAX_VALUE))
+        int oldVersionCode = preferences.getInt(getString(R.string.saved_version_code), Integer.MAX_VALUE);
+        if (versionCode > oldVersionCode)
         {
             // If were a here, the user made an update and not a new installation
 
@@ -150,7 +151,7 @@ public class MainActivity extends AppCompatActivity
 
             // Convert "Aus" to "Alle anzeigen" and "Alle blockieren" to "Nichts anzeigen"
             // for users coming from version 13 or below
-            if (versionCode == 14)
+            if (oldVersionCode <= 13)
             {
                 Set<String> subjects = Subject.getAllSubjects().keySet();
                 SharedPreferences.Editor editor = preferences.edit();
@@ -560,7 +561,9 @@ public class MainActivity extends AppCompatActivity
     private AlertDialog createInfoDialog()
     {
         String message = String.format("Version %s\n" +
-                "Copyright © 2018 Alexander Steinhauer", versionName);
+                "Copyright © %s Alexander Steinhauer",
+                versionName,
+                Calendar.getInstance().get(Calendar.YEAR));
         return new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.action_info))
                 .setMessage(message)
