@@ -436,7 +436,7 @@ public class MainActivity extends AppCompatActivity
     {
         return new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.changelog_title))
-                .setMessage(getString(R.string.changelog_message, versionName))
+                .setMessage(getString(R.string.changelog_message))
                 .setPositiveButton("OK", null)
                 .create();
     }
