@@ -1,14 +1,17 @@
 package com.stonedroid.mpgvertretungsplan;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -16,6 +19,7 @@ import android.preference.PreferenceManager;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
@@ -30,40 +34,54 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.*;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 import de.stonedroid.vertretungsplan.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity
 {
     public static final String TAG = MainActivity.class.getSimpleName();
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     private static final String TABLE_1_BIN = "table1.dat";
     private static final String TABLE_2_BIN = "table2.dat";
 
+    private static final String CHANNEL_ID = "0";
+
     // It's important to store this listener in a global field, otherwise gc will delete it.
     // (For some reasons, the android developers thought it was a good idea to store listeners in
-    // a WeakHashMap, where objects without any connections to other objects are deleted.)
+    // a WeakHashMap, where objects without any references to others are deleted.)
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
     private SharedPreferences preferences;
 
     private ReplacementTable[] tables = null;
     private TableFragment[] fragments = null;
     private CoordinatorLayout mainLayout;
+    private ViewPager viewPager;
+    private TabLayout tabLayout;
 
     private int tabTextColor;
     private int textColor;
     private int importantTextColor;
     private int cardColor;
     private int layoutColor;
+    private int indicatorColor;
+
+    private String versionName;
+    private int versionCode;
+
+    private boolean isDownloadingTables = false;
 
     // Writes in the debug log if bool DEBUG is true
     private void log(String message)
@@ -89,18 +107,50 @@ public class MainActivity extends AppCompatActivity
                 textColor = Color.BLACK;
                 importantTextColor = Color.RED;
                 tabTextColor = Color.WHITE;
-                cardColor = Color.parseColor("#fdecd9");
-                layoutColor = Color.parseColor("#f3f3f3");
+                cardColor = Color.WHITE;
+                layoutColor = getThemePrimaryColor();
+                indicatorColor = Color.WHITE;
                 break;
             case "Weiß":
                 textColor = Color.BLACK;
                 importantTextColor = Color.RED;
                 tabTextColor = Color.BLACK;
                 cardColor = Color.WHITE;
-                layoutColor = Color.LTGRAY;
+                layoutColor = Color.parseColor("#f3f3f3");
+                indicatorColor = Color.BLACK;
+                break;
+            case "Schwarz":
+                textColor = Color.WHITE;
+                importantTextColor = Color.RED;
+                tabTextColor = Color.WHITE;
+                cardColor = Color.parseColor("#222222");
+                layoutColor = getThemePrimaryColor();
+                indicatorColor = Color.WHITE;
+        }
+
+        // Get VersionName/VersionCode of this application
+        try
+        {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            versionName = info.versionName;
+            versionCode = info.versionCode;
+        }
+        catch (PackageManager.NameNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+
+        // Display changelog if user updated to a newer version
+        if (versionCode > preferences.getInt(getString(R.string.saved_version_code), Integer.MAX_VALUE))
+        {
+            createChangelog().show();
         }
 
         setContentView(R.layout.activity_main);
+
+        preferences.edit()
+                .putInt(getString(R.string.saved_version_code), versionCode)
+                .apply();
 
         // Get mainLayout
         mainLayout = findViewById(R.id.main_layout);
@@ -122,7 +172,7 @@ public class MainActivity extends AppCompatActivity
             if (savedInstanceState == null)
             {
                 // Create new fragments if app opens from drive
-                fragments[i] = new TableFragment();
+                fragments[i] = TableFragment.newInstance();
             }
             else
             {
@@ -132,49 +182,81 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
-        fragments[1].setOnFragmentCreatedListener(this::onCreate2);
         // Setup ViewPager with TabLayout
+        fragments[1].setOnFragmentCreatedListener(this::onCreate2);
         CharSequence[] titles = {getCalendarSpan(0), getCalendarSpan(1)};
-        ViewPager viewPager = findViewById(R.id.view_pager);
+        viewPager = findViewById(R.id.view_pager);
         viewPager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager(),
                 fragments, titles));
 
-        TabLayout tabLayout = findViewById(R.id.tab_layout);
+        tabLayout = findViewById(R.id.tab_layout);
         tabLayout.setBackgroundColor(getThemePrimaryColor());
         tabLayout.setTabTextColors(tabTextColor - (70 << 24), tabTextColor);
+        tabLayout.setSelectedTabIndicatorColor(indicatorColor);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
             tabLayout.setElevation(elevation);
         }
 
         tabLayout.setupWithViewPager(viewPager);
+
+        // Reset notifications
+        NotificationManagerCompat.from(this).cancelAll();
+        preferences.edit()
+                .putInt(getString(R.string.saved_unseen_replacements), 0)
+                .putInt(getString(R.string.saved_unseen_messages), 0)
+                .apply();
     }
 
     // Is executed after fragments were instantiated
     private void onCreate2()
     {
+        // Select correct tab automatically
+        // (on weekends show the next table
+        Calendar calendar = Calendar.getInstance();
+        if ((calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY)
+                || (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY))
+        {
+            viewPager.setCurrentItem(1);
+        }
+
         // Register listener to be noticed if user changes something in the settings
         preferenceChangeListener = (sharedPrefs, s) ->
         {
-            // s = (String) key of the changed value
-            log("Key of changed value: " + s);
-            if (s.equals(getString(R.string.saved_grade)))
+            if (!preferences.getBoolean(getString(R.string.saved_init_preferences), false))
             {
-                // Load new table
-                downloadTableAndShow(Grade.parse(sharedPrefs.getString(s, "")), true);
-            }
-            else if(s.contains("filter_enabled"))
-            {
-                // Always show the table from scratch if filter settings were altered
-                if (tables != null)
+                // s = (String) key of the changed value
+                log("Key of changed value: " + s);
+                if (s.equals(getString(R.string.saved_grade)))
                 {
-                    showTables(tables);
+                    // Load new table
+                    downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true);
                 }
-            }
-            else if(s.equals("theme"))
-            {
-                // To change the theme, recreate the activity
-                recreate();
+                else if (s.contains("filter_enabled"))
+                {
+                    // Always show the table from scratch if filter settings were altered
+                    if (tables != null)
+                    {
+                        showTables(tables);
+                    }
+                }
+                else if (s.equals("theme"))
+                {
+                    // To change the theme, recreate the activity
+                    recreate();
+                }
+                else if (s.equals(getString(R.string.saved_notifications_enabled)))
+                {
+                    boolean enabled = preferences.getBoolean(s, false);
+                    if (enabled)
+                    {
+                        enableNotifications();
+                    }
+                    else
+                    {
+                        disableNotifications();
+                    }
+                }
             }
         };
         preferences.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
@@ -182,13 +264,6 @@ public class MainActivity extends AppCompatActivity
         boolean firstTime = preferences.getBoolean(getString(R.string.saved_first_time), true);
         if (firstTime)
         {
-            // Now user opened the app one time
-            // -> set boolean to false
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putBoolean(getString(R.string.saved_first_time), false);
-            editor.apply();
-
-            // TODO: Rewrite welcome dialog
             log("First time!");
             createWelcomeDialog().show();
         }
@@ -212,7 +287,7 @@ public class MainActivity extends AppCompatActivity
                     {
                         // Download from internet
                         log("Download tables");
-                        downloadTableAndShow(Grade.parse(grade), false);
+                        downloadTablesAndShow(Grade.parse(grade), true);
                     }
                     else
                     {
@@ -223,46 +298,70 @@ public class MainActivity extends AppCompatActivity
                             // Load ReplacementTables from internal storage
                             loadTablesFromStorage(true);
                         }
+                        else
+                        {
+                            // No internet and no offline data...
+                            Toast.makeText(this, "Keine Vertretungen wurden heruntergeladen", Toast.LENGTH_LONG)
+                                    .show();
+                        }
                     }
                 }
             }
             else
             {
-                openSettings(true);
+                createGradeDialog().show();
             }
         }
     }
 
-    @Override
-    protected void onDestroy()
+    private void enableNotifications()
     {
-        super.onDestroy();
-        if (tables != null)
-        {
-            new Thread(() ->
-            {
-                try
-                {
-                    String path = getFilesDir().getAbsolutePath();
-                    if (!path.endsWith("/"))
-                    {
-                        path += "/";
-                    }
+        createNotificationChannel();
 
-                    log("Writing to " + path);
-                    // Save tables
-                    Utils.saveObject(tables[0], path + TABLE_1_BIN);
-                    Utils.saveObject(tables[1], path + TABLE_2_BIN);
-                    // Next time, we can open the offline view
-                    preferences.edit()
-                            .putBoolean(getString(R.string.saved_offline_available), true)
-                            .apply();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }).start();
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+
+        PeriodicWorkRequest work = new PeriodicWorkRequest.Builder(NotificationWorker.class,
+                30, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build();
+
+        preferences.edit()
+                .putString(getString(R.string.saved_worker_id), work.getId().toString())
+                .apply();
+
+        WorkManager manager = WorkManager.getInstance();
+        manager.enqueue(work);
+
+        log(work.getId().toString());
+    }
+
+    private void disableNotifications()
+    {
+        /*String id = preferences.getString(getString(R.string.saved_worker_id), null);
+        if (id != null)
+        {
+            WorkManager.getInstance().cancelWorkById(UUID.fromString(id));
+        }*/
+
+        WorkManager.getInstance().cancelAllWork();
+    }
+
+    private void createNotificationChannel()
+    {
+        if (Build.VERSION.SDK_INT >= 26)
+        {
+            String name = getString(R.string.notification_channel_name);
+            String description = getString(R.string.notification_channel_description);
+
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            NotificationManager  manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
         }
     }
 
@@ -273,7 +372,7 @@ public class MainActivity extends AppCompatActivity
         {
             try
             {
-                String path = getFilesDir().getAbsolutePath();
+                String path = this.getFilesDir().getAbsolutePath();
                 if (!path.endsWith("/"))
                 {
                     path += "/";
@@ -309,7 +408,36 @@ public class MainActivity extends AppCompatActivity
         return new AlertDialog.Builder(this)
                 .setTitle(R.string.welcome)
                 .setMessage(R.string.welcome_message)
-                .setPositiveButton("OK", (dialog, which) -> openSettings(true))
+                .setPositiveButton("OK", null)
+                .setOnDismissListener(dialog -> createGradeDialog().show())
+                .create();
+    }
+
+    private AlertDialog createGradeDialog()
+    {
+        List<String> grades = Grade.getGradeNames();
+        CharSequence[] cs_grades = new CharSequence[grades.size()];
+        cs_grades = grades.toArray(cs_grades);
+
+        return new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.grade_message))
+                .setItems(cs_grades, (dialog, which) ->
+                {
+                    preferences.edit()
+                            .putString(getString(R.string.saved_grade), grades.get(which))
+                            .putBoolean(getString(R.string.saved_first_time), false)
+                            .apply();
+                })
+                .setOnCancelListener(dialog -> createGradeDialog().show())
+                .create();
+    }
+
+    private AlertDialog createChangelog()
+    {
+        return new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.changelog_title))
+                .setMessage(getString(R.string.changelog_message, versionName))
+                .setPositiveButton("OK", null)
                 .create();
     }
 
@@ -320,14 +448,26 @@ public class MainActivity extends AppCompatActivity
         calendar.add(Calendar.WEEK_OF_YEAR, plusWeeks);
         // Set calendar to Monday
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        String part1 = String.format("%s.%s", calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1);
+        String part1 = String.format("%s.%s", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
+                toDate(calendar.get(Calendar.MONTH) + 1));
         // Set calendar to Friday
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY);
-        String part2 = String.format("%s.%s", calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1);
+        String part2 = String.format("%s.%s", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
+                toDate(calendar.get(Calendar.MONTH) + 1));
         // Build formatted string
         return String.format("%s - %s", part1, part2);
+    }
+
+    // Adds a zero if date.str() has length == 1
+    private String toDate(int date)
+    {
+        return date < 10 ? "0" + String.valueOf(date) : String.valueOf(date);
+    }
+
+    // Adds a zero if date.str() has length == 1
+    private String toDate(String date)
+    {
+        return date.length() == 1 ? "0" + date : date;
     }
 
     // Returns the intern tag of a fragment
@@ -367,28 +507,55 @@ public class MainActivity extends AppCompatActivity
                 openSettings(false);
                 break;
             case R.id.action_reload:
-                Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), ""));
-                if (grade != null)
+                if (!isDownloadingTables)
                 {
-                    downloadTableAndShow(grade, true);
+                    Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), ""));
+                    if (grade != null)
+                    {
+                        downloadTablesAndShow(grade, true);
+                    }
+                    else
+                    {
+                        openSettings(true);
+                    }
                 }
-                else
-                {
-                    openSettings(true);
-                }
+                break;
+            case R.id.action_info:
+                createInfoDialog().show();
+
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    private AlertDialog createInfoDialog()
+    {
+        String message = String.format("Version %s\n" +
+                "Copyright © 2018 Alexander Steinhauer", versionName);
+        return new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.action_info))
+                .setMessage(message)
+                .create();
+    }
+
     // Downloads both ReplacementTables (for this and the next week) async
     // and adds them after downloading to the MainLayout
     // without blocking the UI thread.
-    private void downloadTableAndShow(Grade grade, boolean reload)
+    private void downloadTablesAndShow(Grade grade, boolean saveTables)
     {
         // Check if we have a valid network connection
         if (isNetworkAvailable())
         {
+            isDownloadingTables = true;
+
+            // Add loading indicator
+            for (TableFragment fragment : fragments)
+            {
+                LinearLayout layout = fragment.getLayout();
+                layout.removeAllViews();
+                layout.addView(createProgressBar());
+            }
+
             new Thread(() ->
             {
                 tables = new ReplacementTable[2];
@@ -410,22 +577,43 @@ public class MainActivity extends AppCompatActivity
                     log("Couldn't download ReplacementTable#2");
                 }
 
-                runOnUiThread(() ->
+                runOnUiThread(() -> showTables(tables));
+                
+                if (saveTables)
                 {
-                    showTables(tables);
-                    if (reload)
+                    // Save tables to storage
+                    String path = getFilesDir().getAbsolutePath();
+                    if (!path.endsWith("/"))
                     {
-                        Snackbar.make(mainLayout, getString(R.string.reloaded_table), Snackbar.LENGTH_SHORT)
-                                .show();
+                        path += "/";
                     }
-                });
+
+                    try
+                    {
+                        Utils.saveObject(tables[0], path + TABLE_1_BIN);
+                        Utils.saveObject(tables[1], path + TABLE_2_BIN);
+                        preferences.edit()
+                                .putBoolean(getString(R.string.saved_offline_available), true)
+                                .apply();
+
+                        log("Saved tables to path " + path);
+                    }
+                    catch (IOException e)
+                    {
+                        runOnUiThread(() -> Toast
+                                .makeText(this, getString(R.string.low_memory), Toast.LENGTH_SHORT)
+                                .show());
+                    }
+                }
+
+                isDownloadingTables = false;
             }).start();
         }
         else
         {
             // Network is not available...
             Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.retry, v -> downloadTableAndShow(grade, reload))
+                    .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables))
                     .show();
         }
     }
@@ -459,15 +647,23 @@ public class MainActivity extends AppCompatActivity
                     if (bar != null)
                     {
                         bar.setTitle(String.format("Klasse %s", table.getGrade()));
+
+                        Calendar date = table.getDownloadDate();
+                        bar.setSubtitle(String.format("vom %s.%s.%s um %s:%s",
+                                toDate(date.get(Calendar.DAY_OF_MONTH)),
+                                toDate(date.get(Calendar.MONTH) + 1),
+                                date.get(Calendar.YEAR),
+                                toDate(date.get(Calendar.HOUR_OF_DAY)),
+                                toDate(date.get(Calendar.MINUTE))));
                     }
 
                     alreadyRenamedAppbar = true;
                 }
 
                 // Get all necessary information
-                ArrayList<Replacement> replacements = PreferenceManager.getDefaultSharedPreferences(this)
+                ArrayList<Replacement> replacements = preferences
                         .getBoolean(getString(R.string.saved_filter_enabled), false)
-                        ? filterReplacements(table.getReplacements())
+                        ? new ArrayList<>(Utils.filterReplacements(this, table))
                         : new ArrayList<>(table.getReplacements());
                 ArrayList<Message> messages = new ArrayList<>(table.getMessages());
                 String[] dates = table.getDates();
@@ -549,37 +745,12 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private ArrayList<Replacement> filterReplacements(List<Replacement> replacements)
+    private View createProgressBar()
     {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
-        // Load all subject
-        Map<String, List<String>> subjects = Subject.getAllSubjects();
-        Set<String> subjectNames = subjects.keySet();
-
-        ArrayList<Replacement> filteredReplacements = new ArrayList<>();
-
-        for (Replacement replacement : replacements)
-        {
-            try
-            {
-                String subjectName = Subject.getSubjectName(replacement.getOldSubject());
-                // Look at userPrefs what to do next
-                String course = prefs.getString("filter_enabled_" + subjectName, null);
-                if (course == null || course.equals("Ignorieren") || course.equals(replacement.getOldSubject()))
-                {
-                    // Let it through the filter
-                    filteredReplacements.add(replacement);
-                }
-            }
-            catch (Exception e)
-            {
-                // Replacement's subject is not listed -> let it through the filter
-                filteredReplacements.add(replacement);
-            }
-        }
-
-        return filteredReplacements;
+        ProgressBar bar = new ProgressBar(this);
+        bar.getIndeterminateDrawable().setColorFilter(indicatorColor, PorterDuff.Mode.SRC_IN);
+        bar.setMinimumHeight(dpToPx(32));
+        return bar;
     }
 
     private View createNoTableView()
@@ -647,6 +818,16 @@ public class MainActivity extends AppCompatActivity
         text.setTextColor(textColor);
         text.setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
         text.setText(message.getText());
+
+        // Clipboard functionality
+        // When a message is clicked for a longer time,
+        // the message is copied
+        text.setOnLongClickListener(v ->
+        {
+            copyIntoClipboard(message.getText(),
+                    () -> Toast.makeText(this, "Nachricht wurde kopiert", Toast.LENGTH_SHORT).show());
+            return true;
+        });
         return text;
     }
 
@@ -659,15 +840,22 @@ public class MainActivity extends AppCompatActivity
         view.setOrientation(LinearLayout.HORIZONTAL);
         view.setMinimumHeight(dpToPx(32));
 
-        // TODO: Copy replacement to clipboard when onLongClick
+        // Clipboard functionality
+        // When a replacement is clicked for a longer time,
+        // a nice formatted String from the replacement's data is created
+        // with formatting tags for WhatsApp
         view.setOnLongClickListener(v ->
         {
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("Vertretungsplan", replacement.toString());
-            clipboard.setPrimaryClip(clip);
-            Toast.makeText(this, "Vertretung wurde kopiert", Toast.LENGTH_SHORT).show();
+            String formattedData = String.format("*Datum*: %s\n*Tag*: %s\n*Klasse*: %s\n*Stunde*: %s\n" +
+                    "*Fach*: %s\n*Raum*: %s\n*statt Fach*: %s\n*Text*: %s",
+                    replacement.getDate(), replacement.getDay(), replacement.getGrade(),
+                    replacement.getPeriod(), replacement.getSubject(), replacement.getRoom(),
+                    replacement.getOldSubject(), replacement.getText());
+            copyIntoClipboard(formattedData,
+                    () -> Toast.makeText(this, "Vertretung wurde kopiert", Toast.LENGTH_SHORT).show());
             return true;
         });
+
         // Calculate width foreach text view
         int width = getResources().getDisplayMetrics().widthPixels - dpToPx(16);
         int maxWidth = width / 5;
@@ -682,7 +870,7 @@ public class MainActivity extends AppCompatActivity
             TextView text = new TextView(this);
             text.setLayoutParams(new ViewGroup.LayoutParams(textWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-            if (i == data.length - 1)
+            if (i == ReplacementFilter.TEXT.ordinal())
             {
                 /*// Dirty fix of "fÃ¤llt aus" in replacement message (don't know why this happens)
                 if (data[i].equals("fÃ¤llt aus"))
@@ -716,6 +904,25 @@ public class MainActivity extends AppCompatActivity
         }
 
         return view;
+    }
+
+    // Copies the given text into the primary clipboard
+    private void copyIntoClipboard(String text, Runnable onSuccess)
+    {
+        ClipboardManager manager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        ClipData data = ClipData.newPlainText("Vertretungsplan", text);
+        if (manager != null)
+        {
+            manager.setPrimaryClip(data);
+            if (onSuccess != null)
+            {
+                runOnUiThread(onSuccess);
+            }
+        }
+        else
+        {
+            Toast.makeText(this, getString(R.string.error_message), Toast.LENGTH_SHORT).show();
+        }
     }
 
     // Creates a view which shows the user that there aren't any replacements.
@@ -766,10 +973,9 @@ public class MainActivity extends AppCompatActivity
     {
         CardView card = new CardView(this);
         //card.setMinimumHeight(dpToPx(32));
-        card.setCardElevation(dpToPx(2));
+        card.setCardElevation(dpToPx(1));
         card.setRadius(dpToPx(8));
-        Drawable background = card.getBackground();
-        background.setColorFilter(cardColor, PorterDuff.Mode.SRC);
+        card.getBackground().setColorFilter(cardColor, PorterDuff.Mode.SRC);
         return card;
     }
 
@@ -787,7 +993,7 @@ public class MainActivity extends AppCompatActivity
         return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
     }
 
-    public int getThemePrimaryColor()
+    private int getThemePrimaryColor()
     {
         TypedValue value = new TypedValue();
         getTheme().resolveAttribute(R.attr.colorPrimary, value, true);

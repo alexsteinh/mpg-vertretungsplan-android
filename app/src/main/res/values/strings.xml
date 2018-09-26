@@ -10,17 +10,12 @@
     <string name="retry">Nochmal</string>
     <string name="ok">OK</string>
     <string name="welcome">Willkommen</string>
-    <string name="welcome_message">Dies ist der 3. Anlauf der MPG-Vertretungsplan App mit praktischen Funktionen:\n
-    - Benachrichtungen, welche dich über Änderungen vom Vertretungsplan infomieren\n
-    - und für die Oberstufe: Ein Kursfilter\n\n
-    Der Sourcecode der App ist unter:\nhttps://github.com/alxndrx/mpg-vertretungsplan-android\neinsehbar</string>
-    <string name="grade_message">Bitte wählen Ihre Klasse aus</string>
+    <string name="welcome_message">Willkommen zur 3. Version der MPG-Vertretungsplan App mit neuen Funktionen:\n[+] Benachrichtungen, welche dich über Änderungen am Vertretungsplan informieren\n[+] Für die Kursstufen: Ein Filter, welcher einmal eingestellt nur für dich interessante Vertretungen anzeigt\n[+] Kopiere Vertretugen oder Nachrichten ganz einfach in deinen Zwischenspeicher,indem du die sie einfach lange gedrückt hälst\n[+] Neue Farben! - Zur Auswahl im Einstellungsmenü bereit\n\nWeiterhin:\n[+] Ein Offline-Modus für Zeiten ohne Internet\n[+] Zwei praktische Anzeigen von den Vertretungsplänen dieser und nächster Woche\n\n\nCopyright © 2018 Alexander Steinhauer\nSourcecode: github.com/alxndrx/mpg-vertretungsplan-android</string>
+    <string name="grade_message">Bitte wähle deine Klasse aus</string>
     <string name="general">Allgemein</string>
     <string name="saved_offline_available">offline_available</string>
-    <string name="notification_channel_name">Channel</string>
-    <string name="notification_channel_description">This channel provides notification about changes in the current ReplacementTable</string>
-    <string name="saved_notification_id">notification_id</string>
-    <string name="pref_category_filter">Filter (nur für die Oberstufe)</string>
+    <string name="pref_category_filter">Filter (nur für Oberstufe)</string>
+    <string name="pref_category_summary_filter">Für Kompatibilität zwischen 11 und 12:\n- abc entspricht abc1\n- ABC entspricht Abc1\n- ABCx entspricht Abcx</string>
     <string name="saved_filter_enabled">filter_enabled</string>
     <string name="action_reload">Neu laden</string>
     <string name="offline_version">Zeige Offline-Version</string>
@@ -29,4 +24,19 @@
     <string name="pref_category_customizing">Individualisierung</string>
     <string name="pref_title_theme">Theme</string>
     <string name="saved_theme">theme</string>
+    <string name="pref_category_notifications">Benachrichtigungen</string>
+    <string name="saved_notifications_enabled">notifications_enabled</string>
+    <string name="pref_title_notifications_enabled">Benachrichtungen aktiv</string>
+    <string name="notification_channel_name">Neue Vertretungen/Nachrichten</string>
+    <string name="notification_channel_description">Es werden Benachrichtungen verschickt, falls es neue Vertretungen oder Nachrichten für sie gibt</string>
+    <string name="saved_worker_id">worker_id</string>
+    <string name="saved_unseen_replacements">unseen_replacements</string>
+    <string name="saved_unseen_messages">unseen_messages</string>
+    <string name="saved_version_code">version_code</string>
+    <string name="changelog_title">Changelog</string>
+    <string name="changelog_message">Version %s:\n[+] Neues Design + Performance-Boost\n[+] Neuer Filter für die Oberstufe (Klasse 11/12)\n[+] Benachrichtungen über Änderungen am Vertretungsplan\n[+] Individualisierung durch Themes\n[+] Halte eine Vertretung/Nachricht länger gedrückt, um sie zu kopieren\n[+] Open-Source Software</string>
+    <string name="error_message">Es ist ein Fehler aufgetreten</string>
+    <string name="low_memory">Kann Vertretungspläne nicht speichern (wenig Speicher?)</string>
+    <string name="saved_init_preferences">init_preferences</string>
+    <string name="action_info">Info</string>
 </resources>

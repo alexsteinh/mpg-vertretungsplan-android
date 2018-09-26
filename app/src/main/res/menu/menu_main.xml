@@ -9,4 +9,8 @@
             app:showAsAction="never"
             android:title="@string/action_settings"
             android:id="@+id/action_settings"/>
+    <item
+            app:showAsAction="never"
+            android:title="@string/action_info"
+            android:id="@+id/action_info"/>
 </menu>

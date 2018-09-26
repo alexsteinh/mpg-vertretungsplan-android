@@ -2,8 +2,6 @@ package com.stonedroid.mpgvertretungsplan;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.content.res.AppCompatResources;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,8 +29,10 @@ public class TableFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
         View view = inflater.inflate(R.layout.fragment_table, container, false);
+        
         layout = view.findViewById(R.id.fragment_layout);
         layout.setId(View.generateViewId());
+        
         return view;
     }
 
