@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity
@@ -143,7 +144,35 @@ public class MainActivity extends AppCompatActivity
         // Display changelog if user updated to a newer version
         if (versionCode > preferences.getInt(getString(R.string.saved_version_code), Integer.MAX_VALUE))
         {
+            // If were a here, the user made an update and not a new installation
+
             createChangelog().show();
+
+            // Convert "Aus" to "Alle anzeigen" and "Alle blockieren" to "Nichts anzeigen"
+            // for users coming from version 13 or below
+            if (versionCode == 14)
+            {
+                Set<String> subjects = Subject.getAllSubjects().keySet();
+                SharedPreferences.Editor editor = preferences.edit();
+
+                for (String subject : subjects)
+                {
+                    String pref = preferences.getString("filter_enabled_" + subject, null);
+                    if (pref != null)
+                    {
+                        if (pref.equals("Aus"))
+                        {
+                            editor.putString("filter_enabled_" + subject, "Alle anzeigen");
+                        }
+                        else if(pref.equals("Alle blockieren"))
+                        {
+                            editor.putString("filter_enabled_" + subject, "Nichts anzeigen");
+                        }
+                    }
+                }
+
+                editor.apply();
+            }
         }
 
         setContentView(R.layout.activity_main);

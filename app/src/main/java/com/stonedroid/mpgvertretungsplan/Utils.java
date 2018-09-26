@@ -92,7 +92,7 @@ public class Utils
                 // Look at user preferences what to do next
                 String course = prefs.getString("filter_enabled_" + subjectName, null);
 
-                if (course == null || course.equals("Aus") || course.contains(oldSubject))
+                if (course == null || course.equals("Alle anzeigen") || course.contains(oldSubject))
                 {
                     // Let it through the filter
                     filteredReplacements.add(replacement);

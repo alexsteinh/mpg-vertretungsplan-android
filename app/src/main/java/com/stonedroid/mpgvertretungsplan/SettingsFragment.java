@@ -158,8 +158,8 @@ public class SettingsFragment extends PreferenceFragmentCompat
             subjectPref.setTitle(key);
             // Set possible subject names
             ArrayList<String> names = new ArrayList<>(subjects.get(key));
-            names.add(0, "Aus");
-            names.add(1, "Alle blockieren");
+            names.add(0, "Alle anzeigen");
+            names.add(1, "Nichts anzeigen");
             // Convert to CharSequence
             CharSequence[] charNames = new CharSequence[names.size()];
             charNames = names.toArray(charNames);
