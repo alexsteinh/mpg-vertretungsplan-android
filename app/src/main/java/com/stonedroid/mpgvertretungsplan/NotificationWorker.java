@@ -66,41 +66,27 @@ public class NotificationWorker extends Worker
                 }
             }
 
-            // Count all new replacements
             int rCount = preferences.getInt(context.getString(R.string.saved_unseen_replacements), 0);
             int mCount = preferences.getInt(context.getString(R.string.saved_unseen_messages), 0);
 
+            // Count all new replacements
             for (Replacement r1 : newReplacements)
             {
-                boolean alreadyExists = false;
-
-                for (Replacement r2 : oldReplacements)
+                if (!oldReplacements.contains(r1))
                 {
-                    if (r1.equals(r2))
-                    {
-                        alreadyExists = true;
-                        break;
-                    }
+                    // The replacement is new... add one to the new replacement counter
+                    rCount++;
                 }
-
-                if (!alreadyExists) rCount++;
             }
 
             // Count all new messages
             for (Message m1 : newMessages)
             {
-                boolean alreadyExists = false;
-
-                for (Message m2 : oldMessages)
+                if (!oldMessages.contains(m1))
                 {
-                    if (m1.equals(m2))
-                    {
-                        alreadyExists = true;
-                        break;
-                    }
+                    // The message is new... add one to the new message counter
+                    mCount++;
                 }
-
-                if (!alreadyExists) mCount++;
             }
 
             String title = null;
