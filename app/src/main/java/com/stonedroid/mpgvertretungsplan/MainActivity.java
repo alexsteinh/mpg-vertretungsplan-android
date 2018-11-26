@@ -53,7 +53,6 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity
 {
     public static final String TAG = MainActivity.class.getSimpleName();
-    public static final boolean DEBUG = false;
 
     private static final String TABLE_1_BIN = "table1.dat";
     private static final String TABLE_2_BIN = "table2.dat";
@@ -83,14 +82,10 @@ public class MainActivity extends AppCompatActivity
     private int versionCode;
 
     private boolean isDownloadingTables = false;
-
-    // Writes in the debug log if bool DEBUG is true
+    
     private void log(String message)
     {
-        if (DEBUG)
-        {
-            Log.d(TAG, message);
-        }
+        Log.d(TAG, message);
     }
 
     @Override
