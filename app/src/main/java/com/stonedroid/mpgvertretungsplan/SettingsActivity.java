@@ -10,7 +10,7 @@ public class SettingsActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
-        Utils.setCustomTheme(this);
+        CustomTheme.changeTheme(this);
 
         // Push SettingsFragment into the the foreground
         getSupportFragmentManager().beginTransaction()
