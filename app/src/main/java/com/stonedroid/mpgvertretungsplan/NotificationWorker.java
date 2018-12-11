@@ -9,7 +9,9 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
+import androidx.work.Result;
 import androidx.work.Worker;
+import androidx.work.WorkerParameters;
 import de.stonedroid.vertretungsplan.Grade;
 import de.stonedroid.vertretungsplan.Message;
 import de.stonedroid.vertretungsplan.Replacement;
@@ -34,6 +36,11 @@ public class NotificationWorker extends Worker
 
     private ReplacementTable[] tables = new ReplacementTable[2];
     private ReplacementTable[] oldTables = new ReplacementTable[2];
+
+    public NotificationWorker(Context context, WorkerParameters workerParams)
+    {
+        super(context, workerParams);
+    }
 
     @Override
     public Result doWork()
@@ -132,7 +139,7 @@ public class NotificationWorker extends Worker
             saveTablesToStorage();
         }
 
-        return Result.SUCCESS;
+        return Result.success();
     }
 
     private void sendNotification(String title, String message)
