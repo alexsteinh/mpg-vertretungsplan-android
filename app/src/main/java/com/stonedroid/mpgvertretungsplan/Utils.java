@@ -3,14 +3,17 @@ package com.stonedroid.mpgvertretungsplan;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.TypedValue;
 import de.stonedroid.vertretungsplan.Grade;
 import de.stonedroid.vertretungsplan.Replacement;
 import de.stonedroid.vertretungsplan.ReplacementTable;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Utils
 {
@@ -33,25 +36,6 @@ public class Utils
         Object obj = ois.readObject();
         ois.close();
         return obj;
-    }
-
-    public static String setCustomTheme(Context context)
-    {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String themeName = prefs.getString(context.getString(R.string.saved_theme), "Orange");
-        switch (themeName)
-        {
-            case "Orange":
-                context.setTheme(R.style.OrangeTheme);
-                break;
-            case "Weiß":
-                context.setTheme(R.style.WhiteTheme);
-                break;
-            case "Schwarz":
-                context.setTheme(R.style.BlackTheme);
-        }
-
-        return themeName;
     }
 
     public static List<Replacement> filterReplacements(Context context, ReplacementTable table)
@@ -90,12 +74,24 @@ public class Utils
                 String subjectName = Subject.getSubjectName(oldSubject);
 
                 // Look at user preferences what to do next
-                String course = prefs.getString("filter_enabled_" + subjectName, null);
-
-                if (course == null || course.equals("Alle anzeigen") || course.contains(oldSubject))
+                if (!prefs.getBoolean(context.getString(R.string.saved_filter_multi_select_enabled), false))
                 {
-                    // Let it through the filter
-                    filteredReplacements.add(replacement);
+                    String course = prefs.getString("filter_enabled_" + subjectName, null);
+
+                    if (course == null || course.equals(SettingsFragment.SHOW_ALL) || course.contains(oldSubject))
+                    {
+                        // Let it through the filter
+                        filteredReplacements.add(replacement);
+                    }
+                }
+                else
+                {
+                    Set<String> courses = prefs.getStringSet("filter_enabled_" + subjectName, null);
+
+                    if (courses == null || courses.contains(oldSubject))
+                    {
+                        filteredReplacements.add(replacement);
+                    }
                 }
             }
             catch (Exception e)
@@ -108,13 +104,13 @@ public class Utils
         return filteredReplacements;
     }
 
-    public static <T> boolean containsAny(List<T> list1, List<T> list2)
+    public static boolean containsAny(List<? extends Comparable> list1, List<? extends Comparable> list2)
     {
-        for (T t1 : list1)
+        for (Comparable comp1 : list1)
         {
-            for (T t2 : list2)
+            for (Comparable comp2 : list2)
             {
-                if (t1.equals(t2))
+                if (comp1.equals(comp2))
                 {
                     return true;
                 }
@@ -122,5 +118,108 @@ public class Utils
         }
 
         return false;
+    }
+
+    public static String getReplacementSummary(Replacement replacement)
+    {
+        String summary;
+        if (replacement.getText().contains("fällt aus"))
+        {
+            if (replacement.getPeriod().length() == 1)
+            {
+                summary = "Am %s fällt Fach %s in der %s. Stunde aus";
+            }
+            else
+            {
+                summary = "Am %s fällt Fach %s in den Stunden %s aus";
+            }
+
+            summary = String.format(summary, replacement.getDate(), replacement.getOldSubject(),
+                    replacement.getPeriod());
+        }
+        else if (replacement.getText().equals("Raumänderung"))
+        {
+            if (replacement.getPeriod().length() == 1)
+            {
+                summary = "Am %s Fach %s in der %s. Stunde im Raum %s";
+            }
+            else
+            {
+                summary = "Am %s Fach %s in den Stunden %s im Raum %s";
+            }
+
+            summary = String.format(summary, replacement.getDate(), replacement.getSubject(),
+                    replacement.getPeriod(), replacement.getRoom());
+        }
+        else
+        {
+            if (replacement.getPeriod().length() == 1)
+            {
+                summary = "Am %s Fach %s statt %s in der %s. Stunde im Raum %s, da %s";
+            }
+            else
+            {
+                summary = "Am %s Fach %s statt %s in den Stunden %s im Raum %s, da %s";
+            }
+
+            summary = String.format(summary, replacement.getDate(), replacement.getSubject(),
+                    replacement.getOldSubject(), replacement.getPeriod(), replacement.getRoom(),
+                    replacement.getText());
+        }
+
+        if ((!summary.endsWith(".")) && (!summary.endsWith("!")))
+        {
+            if (summary.endsWith("?"))
+            {
+                return summary;
+            }
+
+            return summary.concat(".");
+        }
+
+        return summary;
+    }
+
+    public static int getThemePrimaryColor(Context context)
+    {
+        TypedValue value = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
+        return value.data;
+    }
+
+    public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements)
+    {
+        StringBuilder sb = new StringBuilder();
+        Iterator<? extends CharSequence> iterator = elements.iterator();
+
+        while (iterator.hasNext())
+        {
+            sb.append(iterator.next());
+
+            if (iterator.hasNext())
+            {
+                sb.append(delimiter);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    public static String join(CharSequence delimiter, CharSequence[] elements)
+    {
+        StringBuilder sb = new StringBuilder();
+        int size = elements.length;
+
+        for (int i = 0; i < size; i++)
+        {
+            sb.append(elements[i]);
+
+            if (i < (size - 1))
+            {
+                sb.append(delimiter);
+            }
+        }
+
+        return sb.toString();
     }
 }
