@@ -29,7 +29,7 @@ public class Subject
             .put("Latein", Arrays.asList("L1"))
             .put("Mathematik", Arrays.asList("M1", "M2", "M3", "M4", "M5"))
             .put("Musik", Arrays.asList("mu1", "mu2", "Mu1"))
-            .put("Philosophie", Arrays.asList("phil"))
+            .put("Philosophie", Arrays.asList("phil1"))
             .put("Physik", Arrays.asList("ph1", "ph2", "Ph1"))
             .put("Psychologie", Arrays.asList("psy1", "psy2", "psy3"))
             .put("Religion", Arrays.asList("rev1", "rev2", "rev3", "rrk1"))
@@ -58,6 +58,7 @@ public class Subject
             .put("ITAL", "Ital1")
             .put("rrk", "rrk1")
             .put("eth", "eth1")
+            .put("phil", "phil1")
             .build();
 
     public static Map<String, List<String>> getAllSubjects()
