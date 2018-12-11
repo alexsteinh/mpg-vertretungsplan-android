@@ -26,7 +26,7 @@
     <string name="saved_theme">theme</string>
     <string name="pref_category_notifications">Benachrichtigungen</string>
     <string name="saved_notifications_enabled">notifications_enabled</string>
-    <string name="pref_title_notifications_enabled">Benachrichtigungen aktiv</string>
+    <string name="pref_title_notifications_enabled">Benachrichtigungen anzeigen</string>
     <string name="notification_channel_name">Neue Vertretungen/Nachrichten</string>
     <string name="notification_channel_description">Es werden Benachrichtigungen verschickt, falls es neue Vertretungen oder Nachrichten für sie gibt</string>
     <string name="saved_worker_id">worker_id</string>
@@ -34,9 +34,13 @@
     <string name="saved_unseen_messages">unseen_messages</string>
     <string name="saved_version_code">version_code</string>
     <string name="changelog_title">Changelog</string>
-    <string name="changelog_message">Version 3.0.3:\n[+] Klasse 7a kann wieder angeschaut werden\n\nVersion 3.0.2:\n[+] Filterbezeichnungen wurden vereinfacht\n\nVersion 3.0.1:\n[+] Rechtschreibfehler wurden behoben\n\nVersion 3.0:\n[+] Neues Design + Performance-Boost\n[+] Neuer Filter für die Oberstufe (Klasse 11/12)\n[+] Benachrichtigungen über Änderungen am Vertretungsplan\n[+] Individualisierung durch Themes\n[+] Halte eine Vertretung/Nachricht länger gedrückt, um sie zu kopieren\n[+] Open-Source Software</string>
+    <string name="changelog_message">Version 3.1:\n[+] Mehrfachauswahl beim Filter\n[+] Langes Tippen auf eine Vertretung kopiert eine kurze Zusammenfassung anstatt eines Datensatzes\n[+] Changelog kann vom Menü aus geöffnet werden\n\nVersion 3.0.3:\n[+] Klasse 7a kann wieder angeschaut werden\n\nVersion 3.0.2:\n[+] Filterbezeichnungen wurden vereinfacht\n\nVersion 3.0.1:\n[+] Rechtschreibfehler wurden behoben\n\nVersion 3.0:\n[+] Neues Design + Performance-Boost\n[+] Neuer Filter für die Oberstufe (Klasse 11/12)\n[+] Benachrichtigungen über Änderungen am Vertretungsplan\n[+] Individualisierung durch Themes\n[+] Halte eine Vertretung/Nachricht länger gedrückt, um sie zu kopieren\n[+] Open-Source Software</string>
     <string name="error_message">Es ist ein Fehler aufgetreten</string>
     <string name="low_memory">Kann Vertretungspläne nicht speichern (wenig Speicher?)</string>
     <string name="saved_init_preferences">init_preferences</string>
     <string name="action_info">Info</string>
+    <string name="action_changelog">Changelog</string>
+    <string name="pref_title_filter_multi_select_enabled">Mehrfachauswahl</string>
+    <string name="pref_summary_filter_multi_select_enabled">Beim Deaktivieren dieser Option wird die oberste Filterauswahl übernommen, falls nicht alle markiert wurden.</string>
+    <string name="saved_filter_multi_select_enabled">filter_multi_select_enabled</string>
 </resources>
