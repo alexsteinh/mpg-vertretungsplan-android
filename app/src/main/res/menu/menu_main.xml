@@ -11,6 +11,10 @@
             android:id="@+id/action_settings"/>
     <item
             app:showAsAction="never"
+            android:title="@string/action_changelog"
+            android:id="@+id/action_changelog"/>
+    <item
+            app:showAsAction="never"
             android:title="@string/action_info"
             android:id="@+id/action_info"/>
 </menu>
