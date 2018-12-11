@@ -31,7 +31,6 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.*;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -58,6 +57,8 @@ public class MainActivity extends AppCompatActivity
     private static final String TABLE_2_BIN = "table2.dat";
 
     private static final String CHANNEL_ID = "0";
+
+    public static boolean registerPreferencesChanges = true;
 
     // It's important to store this listener in a global field, otherwise gc will delete it.
     // (For some reasons, the android developers thought it was a good idea to store listeners in
@@ -96,33 +97,13 @@ public class MainActivity extends AppCompatActivity
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Set theme (with customizations)
-        String themeName = Utils.setCustomTheme(this);
-        switch (themeName)
-        {
-            case "Orange":
-                textColor = Color.BLACK;
-                importantTextColor = Color.RED;
-                tabTextColor = Color.WHITE;
-                cardColor = Color.WHITE;
-                layoutColor = getThemePrimaryColor();
-                indicatorColor = Color.WHITE;
-                break;
-            case "Weiß":
-                textColor = Color.BLACK;
-                importantTextColor = Color.RED;
-                tabTextColor = Color.BLACK;
-                cardColor = Color.WHITE;
-                layoutColor = Color.parseColor("#f3f3f3");
-                indicatorColor = Color.BLACK;
-                break;
-            case "Schwarz":
-                textColor = Color.WHITE;
-                importantTextColor = Color.RED;
-                tabTextColor = Color.WHITE;
-                cardColor = Color.parseColor("#222222");
-                layoutColor = getThemePrimaryColor();
-                indicatorColor = Color.WHITE;
-        }
+        CustomTheme theme = CustomTheme.changeTheme(this);
+        textColor = theme.getTextColor();
+        importantTextColor = theme.getImportantTextColor();
+        tabTextColor = theme.getTabTextColor();
+        cardColor = theme.getCardColor();
+        layoutColor = theme.getLayoutColor();
+        indicatorColor = theme.getIndicatorColor();
 
         // Get VersionName/VersionCode of this application
         try
@@ -141,6 +122,7 @@ public class MainActivity extends AppCompatActivity
         if (versionCode > oldVersionCode)
         {
             // If were a here, the user made an update and not a new installation
+            SharedPreferences.Editor editor = preferences.edit();
 
             createChangelog().show();
 
@@ -149,7 +131,6 @@ public class MainActivity extends AppCompatActivity
             if (oldVersionCode <= 13)
             {
                 Set<String> subjects = Subject.getAllSubjects().keySet();
-                SharedPreferences.Editor editor = preferences.edit();
 
                 for (String subject : subjects)
                 {
@@ -166,9 +147,24 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                 }
-
-                editor.apply();
             }
+
+            // Invalidate offline tables -> same replacement table is shown
+            // a little bit different in the new vertretungsplan-api v1.2
+            if (oldVersionCode <= 15)
+            {
+                editor.putBoolean(getString(R.string.saved_offline_available), false).apply();
+
+                // Also convert "phil" to "phil1"
+                String key = "filter_enabled_Philosophie";
+                String oldValue = preferences.getString(key, null);
+                if (oldValue != null && oldValue.equals("phil"))
+                {
+                    editor.putString(key, "phil1");
+                }
+            }
+
+            editor.apply();
         }
 
         setContentView(R.layout.activity_main);
@@ -215,7 +211,7 @@ public class MainActivity extends AppCompatActivity
                 fragments, titles));
 
         tabLayout = findViewById(R.id.tab_layout);
-        tabLayout.setBackgroundColor(getThemePrimaryColor());
+        tabLayout.setBackgroundColor(Utils.getThemePrimaryColor(this));
         tabLayout.setTabTextColors(tabTextColor - (70 << 24), tabTextColor);
         tabLayout.setSelectedTabIndicatorColor(indicatorColor);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
@@ -248,7 +244,7 @@ public class MainActivity extends AppCompatActivity
         // Register listener to be noticed if user changes something in the settings
         preferenceChangeListener = (sharedPrefs, s) ->
         {
-            if (!preferences.getBoolean(getString(R.string.saved_init_preferences), false))
+            if (registerPreferencesChanges && !preferences.getBoolean(getString(R.string.saved_init_preferences), false))
             {
                 // s = (String) key of the changed value
                 log("Key of changed value: " + s);
@@ -545,6 +541,9 @@ public class MainActivity extends AppCompatActivity
                     }
                 }
                 break;
+            case R.id.action_changelog:
+                createChangelog().show();
+                break;
             case R.id.action_info:
                 createInfoDialog().show();
 
@@ -586,22 +585,50 @@ public class MainActivity extends AppCompatActivity
             new Thread(() ->
             {
                 tables = new ReplacementTable[2];
+
+                Thread th1 = new Thread(() ->
+                {
+                    try
+                    {
+                        tables[0] = ReplacementTable.downloadTable(grade, 0);
+                    }
+                    catch (WebException e)
+                    {
+                        log("Couldn't download ReplacementTable#1");
+                    }
+                });
+
+                Thread th2 = new Thread(() ->
+                {
+                    try
+                    {
+                        tables[1] = ReplacementTable.downloadTable(grade, 1);
+                    }
+                    catch (WebException e)
+                    {
+                        log("Couldn't download ReplacementTable#2");
+                    }
+                });
+
+                th1.start();
+                th2.start();
+
                 try
                 {
-                    tables[0] = ReplacementTable.downloadTable(grade, 0);
+                    th1.join();
                 }
-                catch (WebException e)
+                catch (InterruptedException e)
                 {
-                    log("Couldn't download ReplacementTable#1");
+                    e.printStackTrace();
                 }
 
                 try
                 {
-                    tables[1] = ReplacementTable.downloadTable(grade, 1);
+                    th2.join();
                 }
-                catch (WebException e)
+                catch (InterruptedException e)
                 {
-                    log("Couldn't download ReplacementTable#2");
+                    e.printStackTrace();
                 }
 
                 runOnUiThread(() -> showTables(tables));
@@ -873,12 +900,12 @@ public class MainActivity extends AppCompatActivity
         // with formatting tags for WhatsApp
         view.setOnLongClickListener(v ->
         {
-            String formattedData = String.format("*Datum*: %s\n*Tag*: %s\n*Klasse*: %s\n*Stunde*: %s\n" +
+            /*String formattedData = String.format("*Datum*: %s\n*Tag*: %s\n*Klasse*: %s\n*Stunde*: %s\n" +
                     "*Fach*: %s\n*Raum*: %s\n*statt Fach*: %s\n*Text*: %s",
                     replacement.getDate(), replacement.getDay(), replacement.getGrade(),
                     replacement.getPeriod(), replacement.getSubject(), replacement.getRoom(),
-                    replacement.getOldSubject(), replacement.getText());
-            copyIntoClipboard(formattedData,
+                    replacement.getOldSubject(), replacement.getText());*/
+            copyIntoClipboard(Utils.getReplacementSummary(replacement),
                     () -> Toast.makeText(this, "Vertretung wurde kopiert", Toast.LENGTH_SHORT).show());
             return true;
         });
@@ -899,12 +926,6 @@ public class MainActivity extends AppCompatActivity
 
             if (i == ReplacementFilter.TEXT.ordinal())
             {
-                /*// Dirty fix of "fÃ¤llt aus" in replacement message (don't know why this happens)
-                if (data[i].equals("fÃ¤llt aus"))
-                {
-                    data[i] = "fällt aus";
-                }*/
-
                 // Mark text red if the replacements indicates that something was cancelled
                 if (data[i].contains("fällt aus"))
                 {
@@ -1018,12 +1039,5 @@ public class MainActivity extends AppCompatActivity
     private int dpToPx(float dp)
     {
         return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
-    }
-
-    private int getThemePrimaryColor()
-    {
-        TypedValue value = new TypedValue();
-        getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
-        return value.data;
     }
 }
