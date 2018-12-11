@@ -174,6 +174,15 @@ public class SettingsFragment extends PreferenceFragmentCompat
             deleteFilterPreferences();
             changeFilterSettings(multiEnabled);
             addFilterPreferences2(multiEnabled);
+            if (multiEnabled)
+            {
+                multi_enabled.setSummary(getString(R.string.pref_summary_filter_multi_select_enabled));
+            }
+            else
+            {
+                multi_enabled.setSummary("");
+            }
+
             return true;
         });
         screen.addPreference(multi_enabled);
