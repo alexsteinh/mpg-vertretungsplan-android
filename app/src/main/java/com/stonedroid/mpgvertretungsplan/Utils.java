@@ -222,4 +222,23 @@ public class Utils
 
         return sb.toString();
     }
+
+    public static <T extends Comparable<T>> T max(T[] array)
+    {
+        T max = null;
+
+        for (T t : array)
+        {
+            if (max == null)
+            {
+                max = t;
+            }
+            else if (t.compareTo(max) > 0)
+            {
+                max = t;
+            }
+        }
+
+        return max;
+    }
 }
