@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity
             // a little bit different in the new vertretungsplan-api v1.2
             if (oldVersionCode <= 15)
             {
-                editor.putBoolean(getString(R.string.saved_offline_available), false).apply();
+                editor.putBoolean(getString(R.string.saved_offline_available), false);
 
                 // Also convert "phil" to "phil1"
                 String key = "filter_enabled_Philosophie";
