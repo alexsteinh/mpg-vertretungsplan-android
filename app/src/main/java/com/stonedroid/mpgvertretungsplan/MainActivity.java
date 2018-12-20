@@ -484,11 +484,11 @@ public class MainActivity extends AppCompatActivity
         calendar.add(Calendar.WEEK_OF_YEAR, plusWeeks);
         // Set calendar to Monday
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        String part1 = String.format("%s.%s", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
+        String part1 = String.format("%s.%s.", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
                 toDate(calendar.get(Calendar.MONTH) + 1));
         // Set calendar to Friday
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY);
-        String part2 = String.format("%s.%s", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
+        String part2 = String.format("%s.%s.", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
                 toDate(calendar.get(Calendar.MONTH) + 1));
         // Build formatted string
         return String.format("%s - %s", part1, part2);
@@ -1022,12 +1022,6 @@ public class MainActivity extends AppCompatActivity
     // Creates a view containing the replacement's/message's date
     private View createDateView(String date, String day)
     {
-        // Make date look nice
-        if (date.endsWith("."))
-        {
-            date = date.substring(0, date.length() - 1);
-        }
-
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
         text.setTextColor(textColor);
