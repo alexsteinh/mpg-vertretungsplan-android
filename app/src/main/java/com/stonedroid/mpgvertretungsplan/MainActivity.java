@@ -747,6 +747,7 @@ public class MainActivity extends AppCompatActivity
                     CardView card = createCard();
                     LinearLayout cardLayout = new LinearLayout(this);
                     cardLayout.setOrientation(LinearLayout.VERTICAL);
+                    cardLayout.setGravity(Gravity.CENTER);
                     cardLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -855,17 +856,11 @@ public class MainActivity extends AppCompatActivity
     // Creates a grey thin horizontal line
     private View createLine()
     {
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setGravity(Gravity.CENTER);
-        container.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
         View view = new View(this);
         int width = getResources().getDisplayMetrics().widthPixels - dpToPx(32);
         view.setLayoutParams(new ViewGroup.LayoutParams(width, dpToPx(1)));
         view.setBackgroundColor(Color.GRAY);
-        container.addView(view);
-        return container;
+        return view;
     }
 
     // Creates a view with table captions for the replacements
