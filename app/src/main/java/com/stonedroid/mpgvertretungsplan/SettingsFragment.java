@@ -53,6 +53,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         addThemePreference();
         addNotificationPreference();
         addFilterPreference();
+        addAboutTheAppPreferences();
 
         preferences.edit()
                 .putBoolean(getString(R.string.saved_init_preferences), false)
@@ -110,7 +111,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
 
         // Add Theme options
         ListPreference pref = new ListPreference(context);
-        CharSequence[] themeNames = {"Orange", "Weiß", "Schwarz"};
+        CharSequence[] themeNames = CustomTheme.getThemeNames();
         pref.setTitle(getString(R.string.pref_title_theme));
         pref.setKey(getString(R.string.saved_theme));
         pref.setEntries(themeNames);
@@ -350,5 +351,27 @@ public class SettingsFragment extends PreferenceFragmentCompat
                 }
             }
         }
+    }
+
+    private void addAboutTheAppPreferences()
+    {
+        PreferenceCategory category = new PreferenceCategory(context);
+        category.setTitle(R.string.pref_category_about_the_app);
+        screen.addPreference(category);
+
+        Preference changelog = new Preference(context);
+        changelog.setTitle(R.string.pref_title_changelog);
+        changelog.setOnPreferenceClickListener(preference ->
+        {
+            Utils.createChangelog(context).show();
+            return true;
+        });
+        screen.addPreference(changelog);
+
+        Preference info = new Preference(context);
+        info.setSelectable(false);
+        info.setTitle(R.string.pref_title_info);
+        info.setSummary(Utils.createInfoText(context));
+        screen.addPreference(info);
     }
 }

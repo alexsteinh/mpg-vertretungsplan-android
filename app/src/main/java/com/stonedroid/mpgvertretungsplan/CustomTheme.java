@@ -7,6 +7,8 @@ import android.support.v7.preference.PreferenceManager;
 public class CustomTheme
 {
     private static final int DEFAULT_GRAY = Color.parseColor("#f3f3f3");
+    private static final String[] THEME_NAMES = new String[] {"Orange", "Light", "Dark"};
+
     private int textColor;
     private int importantTextColor;
     private int tabTextColor;
@@ -88,8 +90,8 @@ public class CustomTheme
                         .setLayoutColor(Utils.getThemePrimaryColor(context))
                         .setIndicatorColor(Color.WHITE)
                         .build();
-            case "Schwarz":
-                context.setTheme(R.style.BlackTheme);
+            case "Dark":
+                context.setTheme(R.style.DarkTheme);
                 return new Builder()
                         .setTextColor(Color.WHITE)
                         .setImportantTextColor(Color.RED)
@@ -98,8 +100,8 @@ public class CustomTheme
                         .setLayoutColor(Color.BLACK)
                         .setIndicatorColor(Color.WHITE)
                         .build();
-            case "Weiß":
-                context.setTheme(R.style.WhiteTheme);
+            case "Light":
+                context.setTheme(R.style.LightTheme);
                 return new Builder()
                         .setTextColor(Color.BLACK)
                         .setImportantTextColor(Color.RED)
@@ -120,6 +122,11 @@ public class CustomTheme
                         .setIndicatorColor(Color.WHITE)
                         .build();
         }
+    }
+
+    public static String[] getThemeNames()
+    {
+        return THEME_NAMES;
     }
 
     public int getTextColor()

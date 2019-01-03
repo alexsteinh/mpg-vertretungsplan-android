@@ -7,8 +7,6 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
@@ -80,9 +78,6 @@ public class MainActivity extends AppCompatActivity
     private int layoutColor;
     private int indicatorColor;
 
-    private String versionName;
-    private int versionCode;
-
     private boolean isDownloadingTables = false;
     
     private void log(String message)
@@ -97,26 +92,8 @@ public class MainActivity extends AppCompatActivity
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        // Set theme (with customizations)
-        CustomTheme theme = CustomTheme.changeTheme(this);
-        textColor = theme.getTextColor();
-        importantTextColor = theme.getImportantTextColor();
-        tabTextColor = theme.getTabTextColor();
-        cardColor = theme.getCardColor();
-        layoutColor = theme.getLayoutColor();
-        indicatorColor = theme.getIndicatorColor();
-
-        // Get VersionName/VersionCode of this application
-        try
-        {
-            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
-            versionName = info.versionName;
-            versionCode = info.versionCode;
-        }
-        catch (PackageManager.NameNotFoundException e)
-        {
-            e.printStackTrace();
-        }
+        // Get VersionCode of this application
+        int versionCode = Utils.getVersionCode(this);
 
         // Display changelog if user updated to a newer version
         int oldVersionCode = preferences.getInt(getString(R.string.saved_version_code), Integer.MAX_VALUE);
@@ -125,10 +102,10 @@ public class MainActivity extends AppCompatActivity
             // If were a here, the user made an update and not a new installation
             SharedPreferences.Editor editor = preferences.edit();
 
-            createChangelog().show();
+            Utils.createChangelog(this).show();
 
-            // Convert "Aus" to "Alle anzeigen" and "Alle blockieren" to "Nichts anzeigen"
-            // for users coming from version 13 or below
+            // - Convert "Aus" to "Alle anzeigen" and "Alle blockieren" to "Nichts anzeigen"
+            //   for users coming from version 13 or below
             if (oldVersionCode <= 13)
             {
                 Set<String> subjects = Subject.getAllSubjects().keySet();
@@ -150,8 +127,10 @@ public class MainActivity extends AppCompatActivity
                 }
             }
 
-            // Invalidate offline tables -> same replacement table is shown
-            // a little bit different in the new vertretungsplan-api v1.2
+            // - Invalidate offline tables -> same replacement table is shown
+            //   a little bit different in the new vertretungsplan-api v1.2
+            //
+            // - Change theme names
             if (oldVersionCode <= 15)
             {
                 editor.putBoolean(getString(R.string.saved_offline_available), false);
@@ -163,10 +142,34 @@ public class MainActivity extends AppCompatActivity
                 {
                     editor.putString(key, "phil1");
                 }
+
+                String theme = preferences.getString(getString(R.string.saved_theme), "Orange");
+                if (!theme.equals("Orange"))
+                {
+                    if (theme.equals("Schwarz"))
+                    {
+                        theme = "Dark";
+                    }
+                    else if (theme.equals("Weiß"))
+                    {
+                        theme = "Light";
+                    }
+
+                    editor.putString(getString(R.string.saved_theme), theme);
+                }
             }
 
             editor.apply();
         }
+
+        // Set theme (with customizations)
+        CustomTheme theme = CustomTheme.changeTheme(this);
+        textColor = theme.getTextColor();
+        importantTextColor = theme.getImportantTextColor();
+        tabTextColor = theme.getTabTextColor();
+        cardColor = theme.getCardColor();
+        layoutColor = theme.getLayoutColor();
+        indicatorColor = theme.getIndicatorColor();
 
         setContentView(R.layout.activity_main);
 
@@ -468,15 +471,6 @@ public class MainActivity extends AppCompatActivity
                 .create();
     }
 
-    private AlertDialog createChangelog()
-    {
-        return new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.changelog_title))
-                .setMessage(getString(R.string.changelog_message))
-                .setPositiveButton("OK", null)
-                .create();
-    }
-
     // Returns a nice readable string like (01.01 - 05.01)
     private String getCalendarSpan(int plusWeeks)
     {
@@ -555,28 +549,9 @@ public class MainActivity extends AppCompatActivity
                         openSettings(true);
                     }
                 }
-                break;
-            case R.id.action_changelog:
-                createChangelog().show();
-                break;
-            case R.id.action_info:
-                createInfoDialog().show();
-
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    private AlertDialog createInfoDialog()
-    {
-        String message = String.format("Version %s\n" +
-                "Copyright © %s Alexander Steinhauer",
-                versionName,
-                Calendar.getInstance().get(Calendar.YEAR));
-        return new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.action_info))
-                .setMessage(message)
-                .create();
     }
 
     // Downloads both ReplacementTables (for this and the next week) async

@@ -2,7 +2,10 @@ package com.stonedroid.mpgvertretungsplan;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
+import android.support.v7.app.AlertDialog;
 import android.util.TypedValue;
 import de.stonedroid.vertretungsplan.Grade;
 import de.stonedroid.vertretungsplan.Replacement;
@@ -10,6 +13,7 @@ import de.stonedroid.vertretungsplan.ReplacementTable;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -240,5 +244,46 @@ public class Utils
         }
 
         return max;
+    }
+
+    private static PackageInfo getPackageInfo(Context context)
+    {
+        try
+        {
+            return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+        }
+        catch (PackageManager.NameNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static String getVersionName(Context context)
+    {
+        return getPackageInfo(context).versionName;
+    }
+
+    public static int getVersionCode(Context context)
+    {
+        return getPackageInfo(context).versionCode;
+    }
+
+    public static AlertDialog createChangelog(Context context)
+    {
+        return new AlertDialog.Builder(context)
+                .setTitle(context.getString(R.string.changelog_title))
+                .setMessage(context.getString(R.string.changelog_message))
+                .setPositiveButton("OK", null)
+                .create();
+    }
+
+    public static String createInfoText(Context context)
+    {
+        return String.format("Version %s\n" +
+                        "Copyright © %s Alexander Steinhauer",
+                getVersionName(context),
+                Calendar.getInstance().get(Calendar.YEAR));
     }
 }

@@ -43,4 +43,7 @@
     <string name="pref_title_filter_multi_select_enabled">Mehrfachauswahl</string>
     <string name="pref_summary_filter_multi_select_enabled">Beim Deaktivieren dieser Option wird die oberste Filterauswahl übernommen, falls nicht alle markiert wurden.</string>
     <string name="saved_filter_multi_select_enabled">filter_multi_select_enabled</string>
+    <string name="pref_category_about_the_app">Über die App</string>
+    <string name="pref_title_changelog">Changelog</string>
+    <string name="pref_title_info">Info</string>
 </resources>
