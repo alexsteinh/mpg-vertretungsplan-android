@@ -7,6 +7,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
@@ -71,12 +72,7 @@ public class MainActivity extends AppCompatActivity
     private ViewPager viewPager;
     private TabLayout tabLayout;
 
-    private int tabTextColor;
-    private int textColor;
-    private int importantTextColor;
-    private int cardColor;
-    private int layoutColor;
-    private int indicatorColor;
+    private CustomTheme theme;
 
     private boolean isDownloadingTables = false;
     
@@ -163,13 +159,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         // Set theme (with customizations)
-        CustomTheme theme = CustomTheme.changeTheme(this);
-        textColor = theme.getTextColor();
-        importantTextColor = theme.getImportantTextColor();
-        tabTextColor = theme.getTabTextColor();
-        cardColor = theme.getCardColor();
-        layoutColor = theme.getLayoutColor();
-        indicatorColor = theme.getIndicatorColor();
+        theme = CustomThemes.changeTheme(this);
 
         setContentView(R.layout.activity_main);
 
@@ -179,7 +169,7 @@ public class MainActivity extends AppCompatActivity
 
         // Get mainLayout
         mainLayout = findViewById(R.id.main_layout);
-        mainLayout.setBackgroundColor(layoutColor);
+        mainLayout.setBackgroundColor(theme.getLayoutColor());
 
         // Turn action bar elevation off and transfer elevation to TabLayout
         float elevation = 0;
@@ -221,8 +211,10 @@ public class MainActivity extends AppCompatActivity
 
         tabLayout = findViewById(R.id.tab_layout);
         tabLayout.setBackgroundColor(Utils.getThemePrimaryColor(this));
-        tabLayout.setTabTextColors(tabTextColor - (70 << 24), tabTextColor);
-        tabLayout.setSelectedTabIndicatorColor(indicatorColor);
+        tabLayout.setTabTextColors(theme.getTabTextColor() - (70 << 24), theme.getTabTextColor());
+        tabLayout.setSelectedTabIndicatorColor(theme.getIndicatorColor());
+        tabLayout.setTabRippleColor(ColorStateList.valueOf(theme.getTabRippleColor()));
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
             tabLayout.setElevation(elevation);
@@ -813,7 +805,7 @@ public class MainActivity extends AppCompatActivity
     private View createProgressBar()
     {
         ProgressBar bar = new ProgressBar(this);
-        bar.getIndeterminateDrawable().setColorFilter(indicatorColor, PorterDuff.Mode.SRC_IN);
+        bar.getIndeterminateDrawable().setColorFilter(theme.getIndicatorColor(), PorterDuff.Mode.SRC_IN);
         bar.setMinimumHeight(dpToPx(32));
         return bar;
     }
@@ -823,7 +815,7 @@ public class MainActivity extends AppCompatActivity
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setText(R.string.no_table);
         return text;
     }
@@ -860,7 +852,7 @@ public class MainActivity extends AppCompatActivity
             TextView text = new TextView(this);
             text.setLayoutParams(new ViewGroup.LayoutParams(textWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
             text.setTypeface(Typeface.DEFAULT_BOLD);
-            text.setTextColor(textColor);
+            text.setTextColor(theme.getTextColor());
             text.setText(data[i]);
             text.setGravity(Gravity.CENTER);
             view.addView(text);
@@ -874,7 +866,7 @@ public class MainActivity extends AppCompatActivity
     {
         TextView text = new TextView(this);
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
         text.setText(message.getText());
 
@@ -935,7 +927,7 @@ public class MainActivity extends AppCompatActivity
                 if (data[i].contains("fällt aus"))
                 {
                     SpannableStringBuilder str = new SpannableStringBuilder(data[i]);
-                    ForegroundColorSpan color = new ForegroundColorSpan(importantTextColor);
+                    ForegroundColorSpan color = new ForegroundColorSpan(theme.getImportantTextColor());
                     int start = data[i].indexOf("fällt aus");
                     int end = start + "fällt aus".length();
                     str.setSpan(color, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -951,7 +943,7 @@ public class MainActivity extends AppCompatActivity
                 text.setText(data[i]);
             }
 
-            text.setTextColor(textColor);
+            text.setTextColor(theme.getTextColor());
             text.setGravity(Gravity.CENTER);
             view.addView(text);
         }
@@ -984,7 +976,7 @@ public class MainActivity extends AppCompatActivity
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setText(R.string.no_replacements);
         return text;
     }
@@ -994,7 +986,7 @@ public class MainActivity extends AppCompatActivity
     {
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setGravity(Gravity.CENTER);
 
         // Make the day bold
@@ -1022,7 +1014,7 @@ public class MainActivity extends AppCompatActivity
         //card.setMinimumHeight(dpToPx(32));
         card.setCardElevation(dpToPx(1));
         card.setRadius(dpToPx(8));
-        card.getBackground().setColorFilter(cardColor, PorterDuff.Mode.SRC);
+        card.getBackground().setColorFilter(theme.getCardColor(), PorterDuff.Mode.SRC);
         return card;
     }
 

@@ -111,7 +111,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
 
         // Add Theme options
         ListPreference pref = new ListPreference(context);
-        CharSequence[] themeNames = CustomTheme.getThemeNames();
+        CharSequence[] themeNames = CustomThemes.getSimpleNames();
         pref.setTitle(getString(R.string.pref_title_theme));
         pref.setKey(getString(R.string.saved_theme));
         pref.setEntries(themeNames);

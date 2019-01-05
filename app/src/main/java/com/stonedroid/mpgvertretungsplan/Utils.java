@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Utils
+public final class Utils
 {
     // Saves an object, which implements the Serializable interface.
     public static void saveObject(Object obj, String file) throws IOException
