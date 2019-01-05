@@ -30,4 +30,6 @@ public abstract class CustomTheme
     public abstract int getIndicatorColor();
 
     public abstract int getResId();
+
+    public abstract boolean isLight();
 }

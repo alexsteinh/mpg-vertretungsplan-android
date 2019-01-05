@@ -131,6 +131,12 @@ public final class CustomThemes
         {
             return R.style.OrangeTheme;
         }
+
+        @Override
+        public boolean isLight()
+        {
+            return false;
+        }
     }
 
     public static class DarkTheme extends CustomTheme
@@ -193,6 +199,12 @@ public final class CustomThemes
         {
             return R.style.DarkTheme;
         }
+
+        @Override
+        public boolean isLight()
+        {
+            return false;
+        }
     }
 
     public static class LightTheme extends CustomTheme
@@ -254,6 +266,12 @@ public final class CustomThemes
         public int getResId()
         {
             return R.style.LightTheme;
+        }
+
+        @Override
+        public boolean isLight()
+        {
+            return true;
         }
     }
 }
