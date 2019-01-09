@@ -27,6 +27,11 @@ public class SettingsFragment extends PreferenceFragmentCompat
     public static final String SHOW_ALL = "Alle anzeigen";
     public static final String SHOW_NOTHING = "Nichts anzeigen";
 
+    private static final String LOWER_ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+
+    private static final String MINOR_SUBJECT_NOTICE = " (2-std.)";
+    private static final String MAJOR_SUBJECT_NOTICE = " (4-std.)";
+
     private SharedPreferences preferences;
     private PreferenceScreen screen;
     private Context context;
@@ -207,8 +212,23 @@ public class SettingsFragment extends PreferenceFragmentCompat
                 String[] options = new String[_options.size()];
                 options = _options.toArray(options);
 
+                String[] options_with_notices = new String[options.length];
+                System.arraycopy(options, 0, options_with_notices, 0, options.length);
+
+                for (int i = 2; i < options_with_notices.length; i++)
+                {
+                    if (LOWER_ALPHABET.contains(String.valueOf(options_with_notices[i].charAt(0))))
+                    {
+                        options_with_notices[i] = options_with_notices[i].concat(MINOR_SUBJECT_NOTICE);
+                    }
+                    else
+                    {
+                        options_with_notices[i] = options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
+                    }
+                }
+
                 preference.setDefaultValue(options[0]);
-                preference.setEntries(options);
+                preference.setEntries(options_with_notices);
                 preference.setEntryValues(options);
                 preference.setOnPreferenceChangeListener((pref, newValue) ->
                 {
@@ -232,8 +252,23 @@ public class SettingsFragment extends PreferenceFragmentCompat
                 String[] options = new String[_options.size()];
                 options = _options.toArray(options);
 
+                String[] options_with_notices = new String[options.length];
+                System.arraycopy(options, 0, options_with_notices, 0, options.length);
+
+                for (int i = 0; i < options_with_notices.length; i++)
+                {
+                    if (LOWER_ALPHABET.contains(String.valueOf(options_with_notices[i].charAt(0))))
+                    {
+                        options_with_notices[i] = options_with_notices[i].concat(MINOR_SUBJECT_NOTICE);
+                    }
+                    else
+                    {
+                        options_with_notices[i] = options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
+                    }
+                }
+
                 preference.setDefaultValue(options[0]);
-                preference.setEntries(options);
+                preference.setEntries(options_with_notices);
                 preference.setEntryValues(options);
                 preference.setOnPreferenceChangeListener((pref, newValues) ->
                 {
@@ -278,6 +313,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
             {
                 Set<String> oldValues = preferences.getStringSet(key, null);
                 String newValue = null;
+
                 if (oldValues != null)
                 {
                     if (oldValues.isEmpty())
@@ -290,7 +326,11 @@ public class SettingsFragment extends PreferenceFragmentCompat
                     }
                     else
                     {
-                        newValue = oldValues.iterator().next();
+                        String[] _oldValues = new String[oldValues.size()];
+                        _oldValues = oldValues.toArray(_oldValues);
+                        Arrays.sort(_oldValues);
+
+                        newValue = _oldValues[0];
                     }
                 }
 
