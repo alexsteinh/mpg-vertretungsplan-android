@@ -357,10 +357,12 @@ public class SettingsFragment extends PreferenceFragmentCompat
     {
         PreferenceCategory category = new PreferenceCategory(context);
         category.setTitle(R.string.pref_category_about_the_app);
+        category.setOrder(0x1000);
         screen.addPreference(category);
 
         Preference changelog = new Preference(context);
         changelog.setTitle(R.string.pref_title_changelog);
+        changelog.setOrder(0x1001);
         changelog.setOnPreferenceClickListener(preference ->
         {
             Utils.createChangelog(context).show();
@@ -372,6 +374,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         info.setSelectable(false);
         info.setTitle(R.string.pref_title_info);
         info.setSummary(Utils.createInfoText(context));
+        info.setOrder(0x1002);
         screen.addPreference(info);
     }
 }
