@@ -171,12 +171,10 @@ public class MainActivity extends AppCompatActivity
         mainLayout = findViewById(R.id.main_layout);
         mainLayout.setBackgroundColor(theme.getLayoutColor());
 
-        // Turn action bar elevation off and transfer elevation to TabLayout
-        float elevation = 0;
+        // Turn action bar elevation off
         ActionBar bar = getSupportActionBar();
         if (bar != null)
         {
-            elevation = bar.getElevation();
             bar.setElevation(0);
         }
 
@@ -217,7 +215,18 @@ public class MainActivity extends AppCompatActivity
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
-            tabLayout.setElevation(elevation);
+            tabLayout.setElevation(dpToPx(4));
+        }
+        else
+        {
+            // Add shadow below TabLayout for pre-Lollipop devices
+            View shadow = new View(this);
+            shadow.setBackgroundResource(R.drawable.shadow);
+            shadow.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(1)));
+
+            LinearLayout layout = (LinearLayout) mainLayout.getChildAt(0);
+            layout.addView(shadow, 1);
+
         }
 
         tabLayout.setupWithViewPager(viewPager);
