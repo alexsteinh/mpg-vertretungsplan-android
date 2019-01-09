@@ -7,8 +7,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
@@ -21,6 +20,7 @@ import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -31,7 +31,6 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.*;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -59,6 +58,8 @@ public class MainActivity extends AppCompatActivity
 
     private static final String CHANNEL_ID = "0";
 
+    public static boolean registerPreferencesChanges = true;
+
     // It's important to store this listener in a global field, otherwise gc will delete it.
     // (For some reasons, the android developers thought it was a good idea to store listeners in
     // a WeakHashMap, where objects without any references to others are deleted.)
@@ -71,15 +72,7 @@ public class MainActivity extends AppCompatActivity
     private ViewPager viewPager;
     private TabLayout tabLayout;
 
-    private int tabTextColor;
-    private int textColor;
-    private int importantTextColor;
-    private int cardColor;
-    private int layoutColor;
-    private int indicatorColor;
-
-    private String versionName;
-    private int versionCode;
+    private CustomTheme theme;
 
     private boolean isDownloadingTables = false;
     
@@ -95,61 +88,23 @@ public class MainActivity extends AppCompatActivity
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        // Set theme (with customizations)
-        String themeName = Utils.setCustomTheme(this);
-        switch (themeName)
-        {
-            case "Orange":
-                textColor = Color.BLACK;
-                importantTextColor = Color.RED;
-                tabTextColor = Color.WHITE;
-                cardColor = Color.WHITE;
-                layoutColor = getThemePrimaryColor();
-                indicatorColor = Color.WHITE;
-                break;
-            case "Weiß":
-                textColor = Color.BLACK;
-                importantTextColor = Color.RED;
-                tabTextColor = Color.BLACK;
-                cardColor = Color.WHITE;
-                layoutColor = Color.parseColor("#f3f3f3");
-                indicatorColor = Color.BLACK;
-                break;
-            case "Schwarz":
-                textColor = Color.WHITE;
-                importantTextColor = Color.RED;
-                tabTextColor = Color.WHITE;
-                cardColor = Color.parseColor("#222222");
-                layoutColor = getThemePrimaryColor();
-                indicatorColor = Color.WHITE;
-        }
-
-        // Get VersionName/VersionCode of this application
-        try
-        {
-            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
-            versionName = info.versionName;
-            versionCode = info.versionCode;
-        }
-        catch (PackageManager.NameNotFoundException e)
-        {
-            e.printStackTrace();
-        }
+        // Get VersionCode of this application
+        int versionCode = Utils.getVersionCode(this);
 
         // Display changelog if user updated to a newer version
         int oldVersionCode = preferences.getInt(getString(R.string.saved_version_code), Integer.MAX_VALUE);
         if (versionCode > oldVersionCode)
         {
             // If were a here, the user made an update and not a new installation
+            SharedPreferences.Editor editor = preferences.edit();
 
-            createChangelog().show();
+            Utils.createChangelog(this).show();
 
-            // Convert "Aus" to "Alle anzeigen" and "Alle blockieren" to "Nichts anzeigen"
-            // for users coming from version 13 or below
+            // - Convert "Aus" to "Alle anzeigen" and "Alle blockieren" to "Nichts anzeigen"
+            //   for users coming from version 13 or below
             if (oldVersionCode <= 13)
             {
                 Set<String> subjects = Subject.getAllSubjects().keySet();
-                SharedPreferences.Editor editor = preferences.edit();
 
                 for (String subject : subjects)
                 {
@@ -166,10 +121,45 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                 }
-
-                editor.apply();
             }
+
+            // - Invalidate offline tables -> same replacement table is shown
+            //   a little bit different in the new vertretungsplan-api v1.2
+            //
+            // - Change theme names
+            if (oldVersionCode <= 15)
+            {
+                editor.putBoolean(getString(R.string.saved_offline_available), false);
+
+                // Also convert "phil" to "phil1"
+                String key = "filter_enabled_Philosophie";
+                String oldValue = preferences.getString(key, null);
+                if (oldValue != null && oldValue.equals("phil"))
+                {
+                    editor.putString(key, "phil1");
+                }
+
+                String theme = preferences.getString(getString(R.string.saved_theme), "Orange");
+                if (!theme.equals("Orange"))
+                {
+                    if (theme.equals("Schwarz"))
+                    {
+                        theme = "Dark";
+                    }
+                    else if (theme.equals("Weiß"))
+                    {
+                        theme = "Light";
+                    }
+
+                    editor.putString(getString(R.string.saved_theme), theme);
+                }
+            }
+
+            editor.apply();
         }
+
+        // Set theme (with customizations)
+        theme = CustomThemes.changeTheme(this);
 
         setContentView(R.layout.activity_main);
 
@@ -179,14 +169,12 @@ public class MainActivity extends AppCompatActivity
 
         // Get mainLayout
         mainLayout = findViewById(R.id.main_layout);
-        mainLayout.setBackgroundColor(layoutColor);
+        mainLayout.setBackgroundColor(theme.getLayoutColor());
 
-        // Turn action bar elevation off and transfer elevation to TabLayout
-        float elevation = 0;
+        // Turn action bar elevation off
         ActionBar bar = getSupportActionBar();
         if (bar != null)
         {
-            elevation = bar.getElevation();
             bar.setElevation(0);
         }
 
@@ -204,6 +192,11 @@ public class MainActivity extends AppCompatActivity
                 // Get recycled fragments back
                 fragments[i] = (TableFragment) getSupportFragmentManager()
                         .findFragmentByTag(getFragmentTag(R.id.view_pager, i));
+
+                if (fragments[i] == null)
+                {
+                    fragments[i] = TableFragment.newInstance();
+                }
             }
         }
 
@@ -215,12 +208,25 @@ public class MainActivity extends AppCompatActivity
                 fragments, titles));
 
         tabLayout = findViewById(R.id.tab_layout);
-        tabLayout.setBackgroundColor(getThemePrimaryColor());
-        tabLayout.setTabTextColors(tabTextColor - (70 << 24), tabTextColor);
-        tabLayout.setSelectedTabIndicatorColor(indicatorColor);
+        tabLayout.setBackgroundColor(Utils.getThemePrimaryColor(this));
+        tabLayout.setTabTextColors(theme.getTabTextColor() - (70 << 24), theme.getTabTextColor());
+        tabLayout.setSelectedTabIndicatorColor(theme.getIndicatorColor());
+        tabLayout.setTabRippleColor(ColorStateList.valueOf(theme.getTabRippleColor()));
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
-            tabLayout.setElevation(elevation);
+            tabLayout.setElevation(dpToPx(4));
+        }
+        else
+        {
+            // Add shadow below TabLayout for pre-Lollipop devices
+            View shadow = new View(this);
+            shadow.setBackgroundResource(R.drawable.shadow);
+            shadow.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(1)));
+
+            LinearLayout layout = (LinearLayout) mainLayout.getChildAt(0);
+            layout.addView(shadow, 1);
+
         }
 
         tabLayout.setupWithViewPager(viewPager);
@@ -245,17 +251,26 @@ public class MainActivity extends AppCompatActivity
             viewPager.setCurrentItem(1);
         }
 
+        for (TableFragment fragment : fragments)
+        {
+            SwipeRefreshLayout refreshLayout = fragment.getRefreshLayout();
+            refreshLayout.setOnRefreshListener(() ->
+            {
+                downloadTablesAndShow(Grade.parse(preferences.getString(getString(R.string.saved_grade), null)), true, true);
+            });
+        }
+
         // Register listener to be noticed if user changes something in the settings
         preferenceChangeListener = (sharedPrefs, s) ->
         {
-            if (!preferences.getBoolean(getString(R.string.saved_init_preferences), false))
+            if (registerPreferencesChanges && !preferences.getBoolean(getString(R.string.saved_init_preferences), false))
             {
                 // s = (String) key of the changed value
                 log("Key of changed value: " + s);
                 if (s.equals(getString(R.string.saved_grade)))
                 {
                     // Load new table
-                    downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true);
+                    downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true, false);
                 }
                 else if (s.contains("filter_enabled"))
                 {
@@ -312,7 +327,7 @@ public class MainActivity extends AppCompatActivity
                     {
                         // Download from internet
                         log("Download tables");
-                        downloadTablesAndShow(Grade.parse(grade), true);
+                        downloadTablesAndShow(Grade.parse(grade), true, false);
                     }
                     else
                     {
@@ -432,7 +447,8 @@ public class MainActivity extends AppCompatActivity
     {
         return new AlertDialog.Builder(this)
                 .setTitle(R.string.welcome)
-                .setMessage(R.string.welcome_message)
+                .setMessage(getString(R.string.welcome_message,
+                        String.valueOf(Calendar.getInstance().get(Calendar.YEAR))))
                 .setPositiveButton("OK", null)
                 .setOnDismissListener(dialog -> createGradeDialog().show())
                 .create();
@@ -457,15 +473,6 @@ public class MainActivity extends AppCompatActivity
                 .create();
     }
 
-    private AlertDialog createChangelog()
-    {
-        return new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.changelog_title))
-                .setMessage(getString(R.string.changelog_message))
-                .setPositiveButton("OK", null)
-                .create();
-    }
-
     // Returns a nice readable string like (01.01 - 05.01)
     private String getCalendarSpan(int plusWeeks)
     {
@@ -473,11 +480,11 @@ public class MainActivity extends AppCompatActivity
         calendar.add(Calendar.WEEK_OF_YEAR, plusWeeks);
         // Set calendar to Monday
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        String part1 = String.format("%s.%s", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
+        String part1 = String.format("%s.%s.", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
                 toDate(calendar.get(Calendar.MONTH) + 1));
         // Set calendar to Friday
         calendar.set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY);
-        String part2 = String.format("%s.%s", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
+        String part2 = String.format("%s.%s.", toDate(calendar.get(Calendar.DAY_OF_MONTH)),
                 toDate(calendar.get(Calendar.MONTH) + 1));
         // Build formatted string
         return String.format("%s - %s", part1, part2);
@@ -520,6 +527,13 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        if (theme.isLight())
+        {
+            menu.findItem(R.id.action_reload).getIcon().setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
+            menu.findItem(R.id.action_settings).getIcon().setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
+        }
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -537,74 +551,84 @@ public class MainActivity extends AppCompatActivity
                     Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), ""));
                     if (grade != null)
                     {
-                        downloadTablesAndShow(grade, true);
+                        downloadTablesAndShow(grade, true, false);
                     }
                     else
                     {
                         openSettings(true);
                     }
                 }
-                break;
-            case R.id.action_info:
-                createInfoDialog().show();
-
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    private AlertDialog createInfoDialog()
-    {
-        String message = String.format("Version %s\n" +
-                "Copyright © %s Alexander Steinhauer",
-                versionName,
-                Calendar.getInstance().get(Calendar.YEAR));
-        return new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.action_info))
-                .setMessage(message)
-                .create();
-    }
-
     // Downloads both ReplacementTables (for this and the next week) async
     // and adds them after downloading to the MainLayout
     // without blocking the UI thread.
-    private void downloadTablesAndShow(Grade grade, boolean saveTables)
+    private void downloadTablesAndShow(Grade grade, boolean saveTables, boolean swipeRefresh)
     {
         // Check if we have a valid network connection
         if (isNetworkAvailable())
         {
             isDownloadingTables = true;
 
-            // Add loading indicator
-            for (TableFragment fragment : fragments)
-            {
-                LinearLayout layout = fragment.getLayout();
-                layout.removeAllViews();
-                layout.addView(createProgressBar());
-            }
+            showProgressBar(swipeRefresh);
 
             new Thread(() ->
             {
                 tables = new ReplacementTable[2];
+
+                Thread th1 = new Thread(() ->
+                {
+                    try
+                    {
+                        tables[0] = ReplacementTable.downloadTable(grade, 0);
+                    }
+                    catch (WebException e)
+                    {
+                        log("Couldn't download ReplacementTable#1");
+                    }
+                });
+
+                Thread th2 = new Thread(() ->
+                {
+                    try
+                    {
+                        tables[1] = ReplacementTable.downloadTable(grade, 1);
+                    }
+                    catch (WebException e)
+                    {
+                        log("Couldn't download ReplacementTable#2");
+                    }
+                });
+
+                th1.start();
+                th2.start();
+
                 try
                 {
-                    tables[0] = ReplacementTable.downloadTable(grade, 0);
+                    th1.join();
                 }
-                catch (WebException e)
+                catch (InterruptedException e)
                 {
-                    log("Couldn't download ReplacementTable#1");
+                    e.printStackTrace();
                 }
 
                 try
                 {
-                    tables[1] = ReplacementTable.downloadTable(grade, 1);
+                    th2.join();
                 }
-                catch (WebException e)
+                catch (InterruptedException e)
                 {
-                    log("Couldn't download ReplacementTable#2");
+                    e.printStackTrace();
                 }
 
-                runOnUiThread(() -> showTables(tables));
+                runOnUiThread(() ->
+                {
+                    hideProgressBar();
+                    showTables(tables);
+                });
                 
                 if (saveTables)
                 {
@@ -640,7 +664,7 @@ public class MainActivity extends AppCompatActivity
         {
             // Network is not available...
             Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables))
+                    .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables, false))
                     .show();
         }
     }
@@ -707,6 +731,7 @@ public class MainActivity extends AppCompatActivity
                     CardView card = createCard();
                     LinearLayout cardLayout = new LinearLayout(this);
                     cardLayout.setOrientation(LinearLayout.VERTICAL);
+                    cardLayout.setGravity(Gravity.CENTER);
                     cardLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -772,10 +797,32 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private void showProgressBar(boolean swipeRefresh)
+    {
+        for (TableFragment fragment : fragments)
+        {
+            LinearLayout layout = fragment.getLayout();
+            layout.removeAllViews();
+
+            if (!swipeRefresh)
+            {
+                layout.addView(createProgressBar());
+            }
+        }
+    }
+
+    private void hideProgressBar()
+    {
+        for (TableFragment fragment : fragments)
+        {
+            fragment.getRefreshLayout().setRefreshing(false);
+        }
+    }
+
     private View createProgressBar()
     {
         ProgressBar bar = new ProgressBar(this);
-        bar.getIndeterminateDrawable().setColorFilter(indicatorColor, PorterDuff.Mode.SRC_IN);
+        bar.getIndeterminateDrawable().setColorFilter(theme.getIndicatorColor(), PorterDuff.Mode.SRC_IN);
         bar.setMinimumHeight(dpToPx(32));
         return bar;
     }
@@ -785,7 +832,7 @@ public class MainActivity extends AppCompatActivity
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setText(R.string.no_table);
         return text;
     }
@@ -793,17 +840,11 @@ public class MainActivity extends AppCompatActivity
     // Creates a grey thin horizontal line
     private View createLine()
     {
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setGravity(Gravity.CENTER);
-        container.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
         View view = new View(this);
         int width = getResources().getDisplayMetrics().widthPixels - dpToPx(32);
         view.setLayoutParams(new ViewGroup.LayoutParams(width, dpToPx(1)));
         view.setBackgroundColor(Color.GRAY);
-        container.addView(view);
-        return container;
+        return view;
     }
 
     // Creates a view with table captions for the replacements
@@ -828,7 +869,7 @@ public class MainActivity extends AppCompatActivity
             TextView text = new TextView(this);
             text.setLayoutParams(new ViewGroup.LayoutParams(textWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
             text.setTypeface(Typeface.DEFAULT_BOLD);
-            text.setTextColor(textColor);
+            text.setTextColor(theme.getTextColor());
             text.setText(data[i]);
             text.setGravity(Gravity.CENTER);
             view.addView(text);
@@ -842,7 +883,7 @@ public class MainActivity extends AppCompatActivity
     {
         TextView text = new TextView(this);
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
         text.setText(message.getText());
 
@@ -873,12 +914,12 @@ public class MainActivity extends AppCompatActivity
         // with formatting tags for WhatsApp
         view.setOnLongClickListener(v ->
         {
-            String formattedData = String.format("*Datum*: %s\n*Tag*: %s\n*Klasse*: %s\n*Stunde*: %s\n" +
+            /*String formattedData = String.format("*Datum*: %s\n*Tag*: %s\n*Klasse*: %s\n*Stunde*: %s\n" +
                     "*Fach*: %s\n*Raum*: %s\n*statt Fach*: %s\n*Text*: %s",
                     replacement.getDate(), replacement.getDay(), replacement.getGrade(),
                     replacement.getPeriod(), replacement.getSubject(), replacement.getRoom(),
-                    replacement.getOldSubject(), replacement.getText());
-            copyIntoClipboard(formattedData,
+                    replacement.getOldSubject(), replacement.getText());*/
+            copyIntoClipboard(Utils.getReplacementSummary(replacement),
                     () -> Toast.makeText(this, "Vertretung wurde kopiert", Toast.LENGTH_SHORT).show());
             return true;
         });
@@ -899,17 +940,11 @@ public class MainActivity extends AppCompatActivity
 
             if (i == ReplacementFilter.TEXT.ordinal())
             {
-                /*// Dirty fix of "fÃ¤llt aus" in replacement message (don't know why this happens)
-                if (data[i].equals("fÃ¤llt aus"))
-                {
-                    data[i] = "fällt aus";
-                }*/
-
                 // Mark text red if the replacements indicates that something was cancelled
                 if (data[i].contains("fällt aus"))
                 {
                     SpannableStringBuilder str = new SpannableStringBuilder(data[i]);
-                    ForegroundColorSpan color = new ForegroundColorSpan(importantTextColor);
+                    ForegroundColorSpan color = new ForegroundColorSpan(theme.getImportantTextColor());
                     int start = data[i].indexOf("fällt aus");
                     int end = start + "fällt aus".length();
                     str.setSpan(color, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -925,7 +960,7 @@ public class MainActivity extends AppCompatActivity
                 text.setText(data[i]);
             }
 
-            text.setTextColor(textColor);
+            text.setTextColor(theme.getTextColor());
             text.setGravity(Gravity.CENTER);
             view.addView(text);
         }
@@ -958,7 +993,7 @@ public class MainActivity extends AppCompatActivity
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
         text.setGravity(Gravity.CENTER);
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setText(R.string.no_replacements);
         return text;
     }
@@ -966,15 +1001,9 @@ public class MainActivity extends AppCompatActivity
     // Creates a view containing the replacement's/message's date
     private View createDateView(String date, String day)
     {
-        // Make date look nice
-        if (date.endsWith("."))
-        {
-            date = date.substring(0, date.length() - 1);
-        }
-
         TextView text = new TextView(this);
         text.setMinHeight(dpToPx(32));
-        text.setTextColor(textColor);
+        text.setTextColor(theme.getTextColor());
         text.setGravity(Gravity.CENTER);
 
         // Make the day bold
@@ -1002,7 +1031,7 @@ public class MainActivity extends AppCompatActivity
         //card.setMinimumHeight(dpToPx(32));
         card.setCardElevation(dpToPx(1));
         card.setRadius(dpToPx(8));
-        card.getBackground().setColorFilter(cardColor, PorterDuff.Mode.SRC);
+        card.getBackground().setColorFilter(theme.getCardColor(), PorterDuff.Mode.SRC);
         return card;
     }
 
@@ -1018,12 +1047,5 @@ public class MainActivity extends AppCompatActivity
     private int dpToPx(float dp)
     {
         return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
-    }
-
-    private int getThemePrimaryColor()
-    {
-        TypedValue value = new TypedValue();
-        getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
-        return value.data;
     }
 }
