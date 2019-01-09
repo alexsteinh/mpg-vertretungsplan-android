@@ -447,7 +447,8 @@ public class MainActivity extends AppCompatActivity
     {
         return new AlertDialog.Builder(this)
                 .setTitle(R.string.welcome)
-                .setMessage(R.string.welcome_message)
+                .setMessage(getString(R.string.welcome_message,
+                        String.valueOf(Calendar.getInstance().get(Calendar.YEAR))))
                 .setPositiveButton("OK", null)
                 .setOnDismissListener(dialog -> createGradeDialog().show())
                 .create();
