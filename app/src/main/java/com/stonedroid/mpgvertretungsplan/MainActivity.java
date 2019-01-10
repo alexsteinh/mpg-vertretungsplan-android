@@ -527,12 +527,19 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        int color;
 
         if (theme.isLight())
         {
-            menu.findItem(R.id.action_reload).getIcon().setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
-            menu.findItem(R.id.action_settings).getIcon().setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
+            color = Color.BLACK;
         }
+        else
+        {
+            color = Color.WHITE;
+        }
+
+        menu.findItem(R.id.action_reload).getIcon().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+        menu.findItem(R.id.action_settings).getIcon().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
 
         return super.onCreateOptionsMenu(menu);
     }
