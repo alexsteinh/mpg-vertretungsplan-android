@@ -27,8 +27,6 @@ public class SettingsFragment extends PreferenceFragmentCompat
     public static final String SHOW_ALL = "Alle anzeigen";
     public static final String SHOW_NOTHING = "Nichts anzeigen";
 
-    private static final String LOWER_ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-
     private static final String MINOR_SUBJECT_NOTICE = " (2-std.)";
     private static final String MAJOR_SUBJECT_NOTICE = " (4-std.)";
 
@@ -217,14 +215,9 @@ public class SettingsFragment extends PreferenceFragmentCompat
 
                 for (int i = 2; i < options_with_notices.length; i++)
                 {
-                    if (LOWER_ALPHABET.contains(String.valueOf(options_with_notices[i].charAt(0))))
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MINOR_SUBJECT_NOTICE);
-                    }
-                    else
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
-                    }
+                    options_with_notices[i] = options_with_notices[i].charAt(0) >= 97
+                            ? options_with_notices[i].concat(MINOR_SUBJECT_NOTICE)
+                            : options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
                 }
 
                 preference.setDefaultValue(options[0]);
@@ -257,14 +250,9 @@ public class SettingsFragment extends PreferenceFragmentCompat
 
                 for (int i = 0; i < options_with_notices.length; i++)
                 {
-                    if (LOWER_ALPHABET.contains(String.valueOf(options_with_notices[i].charAt(0))))
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MINOR_SUBJECT_NOTICE);
-                    }
-                    else
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
-                    }
+                    options_with_notices[i] = options_with_notices[i].charAt(0) >= 97
+                            ? options_with_notices[i].concat(MINOR_SUBJECT_NOTICE)
+                            : options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
                 }
 
                 preference.setDefaultValue(options[0]);
