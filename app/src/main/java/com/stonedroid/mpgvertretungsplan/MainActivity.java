@@ -670,6 +670,8 @@ public class MainActivity extends AppCompatActivity
         else
         {
             // Network is not available...
+            hideProgressBar();
+
             Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
                     .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables, false))
                     .show();
