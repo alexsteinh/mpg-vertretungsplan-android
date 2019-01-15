@@ -184,11 +184,26 @@ public final class Utils
         return summary;
     }
 
-    public static int getThemePrimaryColor(Context context)
+    private static int getAttributeData(Context context, int attribute)
     {
         TypedValue value = new TypedValue();
-        context.getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
+        context.getTheme().resolveAttribute(attribute, value, true);
         return value.data;
+    }
+
+    public static int getThemePrimaryColor(Context context)
+    {
+        return getAttributeData(context, R.attr.colorPrimary);
+    }
+
+    public static int getThemePrimaryDarkColor(Context context)
+    {
+        return getAttributeData(context, R.attr.colorPrimaryDark);
+    }
+
+    public static int getThemeAccentColor(Context context)
+    {
+        return getAttributeData(context, R.attr.colorAccent);
     }
 
     public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements)
