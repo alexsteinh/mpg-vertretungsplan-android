@@ -10,8 +10,6 @@ public abstract class SimpleCustomTheme extends CustomTheme
         super(context);
     }
 
-    public abstract String getName();
-
     @Override
     public int getTextColor()
     {
@@ -53,8 +51,4 @@ public abstract class SimpleCustomTheme extends CustomTheme
     {
         return isLight() ? Color.BLACK : Color.WHITE;
     }
-
-    public abstract int getResId();
-
-    public abstract boolean isLight();
 }

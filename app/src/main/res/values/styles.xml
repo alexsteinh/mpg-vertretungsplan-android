@@ -9,7 +9,22 @@
         <item name="android:windowContentOverlay">@null</item>
     </style>
 
+    <style name="OrangeTheme_no_action_bar" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">#FF8000</item>
+        <item name="colorPrimaryDark">#D96C00</item>
+        <item name="colorAccent">#007FFF</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
     <style name="LightTheme" parent="Theme.AppCompat.Light">
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorPrimaryDark">#FFFFFF</item>
+        <item name="colorAccent">#000000</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="LightTheme_no_action_bar" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">#FFFFFF</item>
         <item name="colorPrimaryDark">#FFFFFF</item>
         <item name="colorAccent">#000000</item>
@@ -23,16 +38,39 @@
         <item name="android:windowContentOverlay">@null</item>
     </style>
 
+    <style name="DarkTheme_no_action_bar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#000000</item>
+        <item name="colorPrimaryDark">#000000</item>
+        <item name="colorAccent">#000000</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
     <style name="Royal_BlueTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">#1976D2</item>
         <item name="colorPrimaryDark">#004BA0</item>
         <item name="colorAccent">#E6892D</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="Royal_BlueTheme_no_action_bar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#1976D2</item>
+        <item name="colorPrimaryDark">#004BA0</item>
+        <item name="colorAccent">#E6892D</item>
+        <item name="android:windowContentOverlay">@null</item>
     </style>
 
     <style name="Calm_GreenTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">#1B5E20</item>
         <item name="colorPrimaryDark">#003300</item>
         <item name="colorAccent">#E4A1DF</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="Calm_GreenTheme_no_action_bar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#1B5E20</item>
+        <item name="colorPrimaryDark">#003300</item>
+        <item name="colorAccent">#E4A1DF</item>
+        <item name="android:windowContentOverlay">@null</item>
     </style>
 
 </resources>

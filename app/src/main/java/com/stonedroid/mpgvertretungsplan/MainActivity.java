@@ -26,6 +26,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
+import android.support.v7.widget.Toolbar;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -159,7 +160,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         // Set theme (with customizations)
-        theme = CustomThemes.changeTheme(this);
+        theme = CustomThemes.changeTheme(this, false);
 
         setContentView(R.layout.activity_main);
 
@@ -171,12 +172,9 @@ public class MainActivity extends AppCompatActivity
         mainLayout = findViewById(R.id.main_layout);
         mainLayout.setBackgroundColor(theme.getLayoutColor());
 
-        // Turn action bar elevation off
-        ActionBar bar = getSupportActionBar();
-        if (bar != null)
-        {
-            bar.setElevation(0);
-        }
+        Toolbar toolbar = findViewById(theme.isLight() ? R.id.toolbar_light : R.id.toolbar_dark);
+        toolbar.setVisibility(View.VISIBLE);
+        setSupportActionBar(toolbar);
 
         // Create a TableFragment foreach week
         fragments = new TableFragment[2];
@@ -209,15 +207,11 @@ public class MainActivity extends AppCompatActivity
 
         tabLayout = findViewById(R.id.tab_layout);
         tabLayout.setBackgroundColor(Utils.getThemePrimaryColor(this));
-        tabLayout.setTabTextColors(theme.getTabTextColor() - (70 << 24), theme.getTabTextColor());
+        tabLayout.setTabTextColors(theme.getTabTextColor() - ((theme.isLight() ? 138 : 76) << 24), theme.getTabTextColor());
         tabLayout.setSelectedTabIndicatorColor(theme.getIndicatorColor());
         tabLayout.setTabRippleColor(ColorStateList.valueOf(theme.getTabRippleColor()));
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-        {
-            tabLayout.setElevation(dpToPx(4));
-        }
-        else
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
         {
             // Add shadow below TabLayout for pre-Lollipop devices
             View shadow = new View(this);
@@ -226,7 +220,6 @@ public class MainActivity extends AppCompatActivity
 
             LinearLayout layout = (LinearLayout) mainLayout.getChildAt(0);
             layout.addView(shadow, 1);
-
         }
 
         tabLayout.setupWithViewPager(viewPager);
@@ -283,6 +276,7 @@ public class MainActivity extends AppCompatActivity
                 else if (s.equals("theme"))
                 {
                     // To change the theme, recreate the activity
+                    // TODO: Fix memory leak
                     recreate();
                 }
                 else if (s.equals(getString(R.string.saved_notifications_enabled)))
@@ -352,6 +346,14 @@ public class MainActivity extends AppCompatActivity
                 createGradeDialog().show();
             }
         }
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        log("GOT DESTROYED!");
+
+        super.onDestroy();
     }
 
     private void enableNotifications()

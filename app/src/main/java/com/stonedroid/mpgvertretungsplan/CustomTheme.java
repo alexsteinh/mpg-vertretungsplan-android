@@ -19,9 +19,9 @@ public abstract class CustomTheme
         this.context = context;
     }
 
-    public void apply()
+    public void apply(boolean withActionBar)
     {
-        context.setTheme(getResId());
+        context.setTheme(withActionBar ? getResId() : getResIdNoActionBar());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
@@ -64,6 +64,7 @@ public abstract class CustomTheme
     public abstract int getIndicatorColor();
 
     public abstract int getResId();
+    public abstract int getResIdNoActionBar();
 
     public abstract boolean isLight();
 }

@@ -10,11 +10,11 @@ public final class CustomThemes
 {
     private static CustomTheme currentTheme = null;
 
-    public static CustomTheme changeTheme(Activity context)
+    public static CustomTheme changeTheme(Activity context, boolean withActionBar)
     {
         CustomTheme theme = _changeTheme(context);
         currentTheme = theme;
-        theme.apply();
+        theme.apply(withActionBar);
         return theme;
     }
 
@@ -92,6 +92,12 @@ public final class CustomThemes
         }
 
         @Override
+        public int getResIdNoActionBar()
+        {
+            return R.style.OrangeTheme_no_action_bar;
+        }
+
+        @Override
         public boolean isLight()
         {
             return false;
@@ -127,6 +133,12 @@ public final class CustomThemes
         public int getResId()
         {
             return R.style.DarkTheme;
+        }
+
+        @Override
+        public int getResIdNoActionBar()
+        {
+            return R.style.DarkTheme_no_action_bar;
         }
 
         @Override
@@ -174,6 +186,12 @@ public final class CustomThemes
         }
 
         @Override
+        public int getResIdNoActionBar()
+        {
+            return R.style.LightTheme_no_action_bar;
+        }
+
+        @Override
         public boolean isLight()
         {
             return true;
@@ -200,6 +218,12 @@ public final class CustomThemes
         }
 
         @Override
+        public int getResIdNoActionBar()
+        {
+            return R.style.Royal_BlueTheme_no_action_bar;
+        }
+
+        @Override
         public boolean isLight()
         {
             return false;
@@ -223,6 +247,12 @@ public final class CustomThemes
         public int getResId()
         {
             return R.style.Calm_GreenTheme;
+        }
+
+        @Override
+        public int getResIdNoActionBar()
+        {
+            return R.style.Calm_GreenTheme_no_action_bar;
         }
 
         @Override
