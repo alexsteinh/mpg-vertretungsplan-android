@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity
     
     private void log(String message)
     {
-        Log.d(TAG, message);
+        Log.d(TAG + "(" + toString().split("@")[1] + ")", message);
     }
 
     @Override
@@ -154,6 +154,14 @@ public class MainActivity extends AppCompatActivity
 
                     editor.putString(getString(R.string.saved_theme), theme);
                 }
+            }
+
+            // - Delete key "init_preferences"
+            // - New vertretungsplan-api v1.2.2 -> Invalidate offline tables
+            if (oldVersionCode <= 17)
+            {
+                editor.remove("init_preferences");
+                editor.putBoolean(getString(R.string.saved_offline_available), false);
             }
 
             editor.apply();
@@ -256,7 +264,7 @@ public class MainActivity extends AppCompatActivity
         // Register listener to be noticed if user changes something in the settings
         preferenceChangeListener = (sharedPrefs, s) ->
         {
-            if (registerPreferencesChanges && !preferences.getBoolean(getString(R.string.saved_init_preferences), false))
+            if (registerPreferencesChanges)
             {
                 // s = (String) key of the changed value
                 log("Key of changed value: " + s);
@@ -276,8 +284,16 @@ public class MainActivity extends AppCompatActivity
                 else if (s.equals("theme"))
                 {
                     // To change the theme, recreate the activity
-                    // TODO: Fix memory leak
-                    recreate();
+                    preferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
+
+                    if (Build.VERSION.SDK_INT >= 21)
+                    {
+                        releaseInstance();
+                    }
+                    else
+                    {
+                        recreate();
+                    }
                 }
                 else if (s.equals(getString(R.string.saved_notifications_enabled)))
                 {
@@ -346,14 +362,6 @@ public class MainActivity extends AppCompatActivity
                 createGradeDialog().show();
             }
         }
-    }
-
-    @Override
-    protected void onDestroy()
-    {
-        log("GOT DESTROYED!");
-
-        super.onDestroy();
     }
 
     private void enableNotifications()
@@ -540,8 +548,10 @@ public class MainActivity extends AppCompatActivity
             color = Color.WHITE;
         }
 
-        menu.findItem(R.id.action_reload).getIcon().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-        menu.findItem(R.id.action_settings).getIcon().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+        for (int i = 0; i < menu.size(); i++)
+        {
+            menu.getItem(i).getIcon().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+        }
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -740,11 +750,7 @@ public class MainActivity extends AppCompatActivity
 
                     // Setup card view with layout
                     CardView card = createCard();
-                    LinearLayout cardLayout = new LinearLayout(this);
-                    cardLayout.setOrientation(LinearLayout.VERTICAL);
-                    cardLayout.setGravity(Gravity.CENTER);
-                    cardLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT));
+                    LinearLayout cardLayout = createCardLayout();
 
                     String date = dates[i];
                     String day = days[i];
@@ -896,7 +902,22 @@ public class MainActivity extends AppCompatActivity
         text.setGravity(Gravity.CENTER);
         text.setTextColor(theme.getTextColor());
         text.setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
-        text.setText(message.getText());
+
+        String messageText = message.getText();
+        // Mark text red if the message indicates that something was cancelled
+        if (messageText.contains("fällt aus"))
+        {
+            SpannableStringBuilder str = new SpannableStringBuilder(messageText);
+            ForegroundColorSpan color = new ForegroundColorSpan(theme.getImportantTextColor());
+            int start = messageText.indexOf("fällt aus");
+            int end = start + "fällt aus".length();
+            str.setSpan(color, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            text.setText(str);
+        }
+        else
+        {
+            text.setText(messageText);
+        }
 
         // Clipboard functionality
         // When a message is clicked for a longer time,
@@ -1044,6 +1065,16 @@ public class MainActivity extends AppCompatActivity
         card.setRadius(dpToPx(8));
         card.getBackground().setColorFilter(theme.getCardColor(), PorterDuff.Mode.SRC);
         return card;
+    }
+
+    private LinearLayout createCardLayout()
+    {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setGravity(Gravity.CENTER);
+        layout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        return layout;
     }
 
     // Opens the preference screen
