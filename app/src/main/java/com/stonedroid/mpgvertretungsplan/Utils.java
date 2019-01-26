@@ -301,13 +301,18 @@ public final class Utils
             TextView text = dialog.findViewById(android.R.id.message);
             if (text != null)
             {
-                text.setTextSize(14);
-                Typeface face = ResourcesCompat.getFont(context, R.font.noto_mono_regular);
-                text.setTypeface(face);
+                toMonospacedFont(context, text);
             }
         });
 
         return dialog;
+    }
+
+    public static void toMonospacedFont(Context context, TextView textView)
+    {
+        textView.setTextSize(14);
+        Typeface face = ResourcesCompat.getFont(context, R.font.noto_mono_regular);
+        textView.setTypeface(face);
     }
 
     public static String createInfoText(Context context)

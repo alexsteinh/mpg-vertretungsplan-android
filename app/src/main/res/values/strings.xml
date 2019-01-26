@@ -10,7 +10,7 @@
     <string name="retry">Nochmal</string>
     <string name="ok">OK</string>
     <string name="welcome">Willkommen</string>
-    <string name="welcome_message">Willkommen zur 3. Version der MPG-Vertretungsplan-App mit neuen Funktionen:\n[+] Benachrichtigungen, welche dich über Änderungen am Vertretungsplan informieren\n[+] Für die Kursstufen: Ein Filter, welcher einmal eingestellt nur für dich interessante Vertretungen anzeigt\n[+] Kopiere Vertretungen oder Nachrichten ganz einfach in deinen Zwischenspeicher, indem du sie lange gedrückt hältst\n[+] Neue Farben! - Zur Auswahl im Einstellungsmenü bereit\n\nWeiterhin:\n[+] Ein Offline-Modus für Zeiten ohne Internet\n[+] Zwei praktische Anzeigen von den Vertretungsplänen dieser und nächster Woche\n\n\nCopyright © %s Alexander Steinhauer\nSourcecode: github.com/alxndrx/mpg-vertretungsplan-android</string>
+    <string name="welcome_message">Willkommen zur 3. Version der MPG-Vertretungsplan-App mit neuen Funktionen:\n\n%s\n\n-----\nCopyright © %s Alexander Steinhauer\nSourcecode: github.com/alxndrx/mpg-vertretungsplan-android</string>
     <string name="grade_message">Bitte wähle deine Klasse aus</string>
     <string name="general">Allgemein</string>
     <string name="saved_offline_available">offline_available</string>

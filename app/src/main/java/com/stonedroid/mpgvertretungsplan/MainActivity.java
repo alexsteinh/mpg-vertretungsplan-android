@@ -445,13 +445,25 @@ public class MainActivity extends AppCompatActivity
 
     private AlertDialog createWelcomeDialog()
     {
-        return new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.welcome)
                 .setMessage(getString(R.string.welcome_message,
+                        getString(R.string.changelog_message),
                         String.valueOf(Calendar.getInstance().get(Calendar.YEAR))))
                 .setPositiveButton("OK", null)
-                .setOnDismissListener(dialog -> createGradeDialog().show())
+                .setOnDismissListener(d -> createGradeDialog().show())
                 .create();
+
+        dialog.setOnShowListener(d ->
+        {
+            TextView text = dialog.findViewById(android.R.id.message);
+            if (text != null)
+            {
+                Utils.toMonospacedFont(this, text);
+            }
+        });
+
+        return dialog;
     }
 
     private AlertDialog createGradeDialog()
