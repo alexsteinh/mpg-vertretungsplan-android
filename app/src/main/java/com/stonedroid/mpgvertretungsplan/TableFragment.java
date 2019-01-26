@@ -2,7 +2,6 @@ package com.stonedroid.mpgvertretungsplan;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +11,6 @@ public class TableFragment extends Fragment
 {
     private OnFragmentCreatedListener listener = null;
     private LinearLayout layout;
-    private SwipeRefreshLayout refreshLayout;
 
     public static TableFragment newInstance()
     {
@@ -35,9 +33,6 @@ public class TableFragment extends Fragment
         layout = view.findViewById(R.id.fragment_layout);
         layout.setId(View.generateViewId());
 
-        refreshLayout = view.findViewById(R.id.refresh_layout);
-        refreshLayout.setId(View.generateViewId());
-        
         return view;
     }
 
@@ -55,10 +50,5 @@ public class TableFragment extends Fragment
     public LinearLayout getLayout()
     {
         return layout;
-    }
-
-    public SwipeRefreshLayout getRefreshLayout()
-    {
-        return refreshLayout;
     }
 }
