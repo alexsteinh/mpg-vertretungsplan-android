@@ -276,7 +276,7 @@ public class MainActivity extends AppCompatActivity
                     // To change the theme, recreate the activity
                     preferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
 
-                    if (Build.VERSION.SDK_INT >= 21)
+                    if (Build.VERSION.SDK_INT >= 28)
                     {
                         releaseInstance();
                     }
