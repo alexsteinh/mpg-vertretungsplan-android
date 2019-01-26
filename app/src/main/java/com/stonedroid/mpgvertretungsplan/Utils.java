@@ -301,4 +301,23 @@ public final class Utils
                 getVersionName(context),
                 Calendar.getInstance().get(Calendar.YEAR));
     }
+
+    public static List<Integer> indexesOf(String text, String word)
+    {
+        List<Integer> indexes = new ArrayList<>();
+        int offset = 0;
+
+        while (text.contains(word))
+        {
+            int start = text.indexOf(word);
+            int end = start + word.length();
+
+            indexes.add(start + offset);
+            text = text.substring(0, start).concat(text.substring(end));
+
+            offset += word.length();
+        }
+
+        return indexes;
+    }
 }

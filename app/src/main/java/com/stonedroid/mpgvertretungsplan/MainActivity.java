@@ -905,13 +905,33 @@ public class MainActivity extends AppCompatActivity
 
         String messageText = message.getText();
         // Mark text red if the message indicates that something was cancelled
-        if (messageText.contains("fällt aus"))
+        if (messageText.indexOf("fällt") < messageText.indexOf("aus"))
         {
             SpannableStringBuilder str = new SpannableStringBuilder(messageText);
-            ForegroundColorSpan color = new ForegroundColorSpan(theme.getImportantTextColor());
-            int start = messageText.indexOf("fällt aus");
-            int end = start + "fällt aus".length();
-            str.setSpan(color, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            int color = theme.getImportantTextColor();
+
+            List<Integer> f_indexes = Utils.indexesOf(messageText, "fällt");
+            List<Integer> a_indexes = Utils.indexesOf(messageText, "aus");
+
+            if (f_indexes.size() == a_indexes.size())
+            {
+                int size = f_indexes.size();
+                for (int i = 0; i < size; i++)
+                {
+                    int f_start = f_indexes.get(i);
+                    int a_start = a_indexes.get(i);
+
+                    if (f_start < a_start)
+                    {
+                        int f_end = f_start + "fällt".length();
+                        int a_end = a_start + "aus".length();
+
+                        str.setSpan(new ForegroundColorSpan(color), f_start, f_end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        str.setSpan(new ForegroundColorSpan(color), a_start, a_end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                }
+            }
+
             text.setText(str);
         }
         else
