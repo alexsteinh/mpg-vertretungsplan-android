@@ -40,12 +40,10 @@ public class SettingsFragment extends PreferenceFragmentCompat
     @Override
     public void onCreatePreferences(Bundle bundle, String s)
     {
-        context = getActivity();
+        MainActivity.registerPreferencesChanges = false;
 
+        context = getActivity();
         preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        preferences.edit()
-                .putBoolean(getString(R.string.saved_init_preferences), true)
-                .apply();
 
         // Load "pseudo" preferences (small hack to dynamically add preferences)
         addPreferencesFromResource(R.xml.preferences);
@@ -58,9 +56,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         addFilterPreference();
         addAboutTheAppPreferences();
 
-        preferences.edit()
-                .putBoolean(getString(R.string.saved_init_preferences), false)
-                .apply();
+        MainActivity.registerPreferencesChanges = true;
     }
 
     // Add the grade preference to the fragment
