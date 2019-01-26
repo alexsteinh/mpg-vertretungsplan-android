@@ -4,9 +4,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.preference.PreferenceManager;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.TypedValue;
+import android.widget.TextView;
 import de.stonedroid.vertretungsplan.Grade;
 import de.stonedroid.vertretungsplan.Replacement;
 import de.stonedroid.vertretungsplan.ReplacementTable;
@@ -287,11 +290,24 @@ public final class Utils
 
     public static AlertDialog createChangelog(Context context)
     {
-        return new AlertDialog.Builder(context)
+        AlertDialog dialog = new AlertDialog.Builder(context)
                 .setTitle(context.getString(R.string.changelog_title))
                 .setMessage(context.getString(R.string.changelog_message))
                 .setPositiveButton("OK", null)
                 .create();
+
+        dialog.setOnShowListener(d ->
+        {
+            TextView text = dialog.findViewById(android.R.id.message);
+            if (text != null)
+            {
+                text.setTextSize(14);
+                Typeface face = ResourcesCompat.getFont(context, R.font.noto_mono_regular);
+                text.setTypeface(face);
+            }
+        });
+
+        return dialog;
     }
 
     public static String createInfoText(Context context)
