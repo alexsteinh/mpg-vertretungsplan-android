@@ -198,9 +198,9 @@ public final class CustomThemes
         }
     }
 
-    public static class Royal_BlueTheme extends SimpleCustomTheme
+    public static class BlueTheme extends SimpleCustomTheme
     {
-        public Royal_BlueTheme(Activity context)
+        public BlueTheme(Activity context)
         {
             super(context);
         }
@@ -208,19 +208,19 @@ public final class CustomThemes
         @Override
         public String getName()
         {
-            return Royal_BlueTheme.class.getSimpleName();
+            return BlueTheme.class.getSimpleName();
         }
 
         @Override
         public int getResId()
         {
-            return R.style.Royal_BlueTheme;
+            return R.style.BlueTheme;
         }
 
         @Override
         public int getResIdNoActionBar()
         {
-            return R.style.Royal_BlueTheme_no_action_bar;
+            return R.style.BlueTheme_no_action_bar;
         }
 
         @Override
@@ -230,9 +230,9 @@ public final class CustomThemes
         }
     }
 
-    public static class Calm_GreenTheme extends SimpleCustomTheme
+    public static class GreenTheme extends SimpleCustomTheme
     {
-        public Calm_GreenTheme(Activity context)
+        public GreenTheme(Activity context)
         {
             super(context);
         }
@@ -240,19 +240,19 @@ public final class CustomThemes
         @Override
         public String getName()
         {
-            return Calm_GreenTheme.class.getSimpleName();
+            return GreenTheme.class.getSimpleName();
         }
 
         @Override
         public int getResId()
         {
-            return R.style.Calm_GreenTheme;
+            return R.style.GreenTheme;
         }
 
         @Override
         public int getResIdNoActionBar()
         {
-            return R.style.Calm_GreenTheme_no_action_bar;
+            return R.style.GreenTheme_no_action_bar;
         }
 
         @Override
