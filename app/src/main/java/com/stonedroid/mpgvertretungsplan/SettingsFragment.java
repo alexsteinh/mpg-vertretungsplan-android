@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v14.preference.MultiSelectListPreference;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.preference.CheckBoxPreference;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
@@ -119,7 +120,11 @@ public class SettingsFragment extends PreferenceFragmentCompat
         pref.setOnPreferenceChangeListener((preference, newValue) ->
         {
             showValue(preference, newValue);
-            getActivity().recreate();
+            FragmentActivity parent = getActivity();
+            if (parent != null)
+            {
+                parent.recreate();
+            }
             return true;
         });
         // Add preference to screen

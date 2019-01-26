@@ -666,10 +666,10 @@ public class MainActivity extends AppCompatActivity
 
                         log("Saved tables to path " + path);
                     }
-                    catch (IOException e)
+                    catch (Exception e)
                     {
                         runOnUiThread(() -> Toast
-                                .makeText(this, getString(R.string.low_memory), Toast.LENGTH_SHORT)
+                                .makeText(this, getString(R.string.low_memory), Toast.LENGTH_LONG)
                                 .show());
                     }
                 }
