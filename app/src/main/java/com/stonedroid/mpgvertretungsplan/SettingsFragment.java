@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v14.preference.MultiSelectListPreference;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.preference.CheckBoxPreference;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
@@ -27,8 +28,6 @@ public class SettingsFragment extends PreferenceFragmentCompat
     public static final String SHOW_ALL = "Alle anzeigen";
     public static final String SHOW_NOTHING = "Nichts anzeigen";
 
-    private static final String LOWER_ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-
     private static final String MINOR_SUBJECT_NOTICE = " (2-std.)";
     private static final String MAJOR_SUBJECT_NOTICE = " (4-std.)";
 
@@ -42,12 +41,10 @@ public class SettingsFragment extends PreferenceFragmentCompat
     @Override
     public void onCreatePreferences(Bundle bundle, String s)
     {
-        context = getActivity();
+        MainActivity.registerPreferencesChanges = false;
 
+        context = getActivity();
         preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        preferences.edit()
-                .putBoolean(getString(R.string.saved_init_preferences), true)
-                .apply();
 
         // Load "pseudo" preferences (small hack to dynamically add preferences)
         addPreferencesFromResource(R.xml.preferences);
@@ -60,9 +57,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         addFilterPreference();
         addAboutTheAppPreferences();
 
-        preferences.edit()
-                .putBoolean(getString(R.string.saved_init_preferences), false)
-                .apply();
+        MainActivity.registerPreferencesChanges = true;
     }
 
     // Add the grade preference to the fragment
@@ -125,7 +120,11 @@ public class SettingsFragment extends PreferenceFragmentCompat
         pref.setOnPreferenceChangeListener((preference, newValue) ->
         {
             showValue(preference, newValue);
-            getActivity().recreate();
+            FragmentActivity parent = getActivity();
+            if (parent != null)
+            {
+                parent.recreate();
+            }
             return true;
         });
         // Add preference to screen
@@ -217,14 +216,9 @@ public class SettingsFragment extends PreferenceFragmentCompat
 
                 for (int i = 2; i < options_with_notices.length; i++)
                 {
-                    if (LOWER_ALPHABET.contains(String.valueOf(options_with_notices[i].charAt(0))))
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MINOR_SUBJECT_NOTICE);
-                    }
-                    else
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
-                    }
+                    options_with_notices[i] = options_with_notices[i].charAt(0) >= 97
+                            ? options_with_notices[i].concat(MINOR_SUBJECT_NOTICE)
+                            : options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
                 }
 
                 preference.setDefaultValue(options[0]);
@@ -257,14 +251,9 @@ public class SettingsFragment extends PreferenceFragmentCompat
 
                 for (int i = 0; i < options_with_notices.length; i++)
                 {
-                    if (LOWER_ALPHABET.contains(String.valueOf(options_with_notices[i].charAt(0))))
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MINOR_SUBJECT_NOTICE);
-                    }
-                    else
-                    {
-                        options_with_notices[i] = options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
-                    }
+                    options_with_notices[i] = options_with_notices[i].charAt(0) >= 97
+                            ? options_with_notices[i].concat(MINOR_SUBJECT_NOTICE)
+                            : options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
                 }
 
                 preference.setDefaultValue(options[0]);

@@ -4,9 +4,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.preference.PreferenceManager;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.TypedValue;
+import android.widget.TextView;
 import de.stonedroid.vertretungsplan.Grade;
 import de.stonedroid.vertretungsplan.Replacement;
 import de.stonedroid.vertretungsplan.ReplacementTable;
@@ -184,11 +187,26 @@ public final class Utils
         return summary;
     }
 
-    public static int getThemePrimaryColor(Context context)
+    private static int getAttributeData(Context context, int attribute)
     {
         TypedValue value = new TypedValue();
-        context.getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
+        context.getTheme().resolveAttribute(attribute, value, true);
         return value.data;
+    }
+
+    public static int getThemePrimaryColor(Context context)
+    {
+        return getAttributeData(context, R.attr.colorPrimary);
+    }
+
+    public static int getThemePrimaryDarkColor(Context context)
+    {
+        return getAttributeData(context, R.attr.colorPrimaryDark);
+    }
+
+    public static int getThemeAccentColor(Context context)
+    {
+        return getAttributeData(context, R.attr.colorAccent);
     }
 
     public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements)
@@ -272,11 +290,29 @@ public final class Utils
 
     public static AlertDialog createChangelog(Context context)
     {
-        return new AlertDialog.Builder(context)
+        AlertDialog dialog = new AlertDialog.Builder(context)
                 .setTitle(context.getString(R.string.changelog_title))
                 .setMessage(context.getString(R.string.changelog_message))
                 .setPositiveButton("OK", null)
                 .create();
+
+        dialog.setOnShowListener(d ->
+        {
+            TextView text = dialog.findViewById(android.R.id.message);
+            if (text != null)
+            {
+                toMonospacedFont(context, text);
+            }
+        });
+
+        return dialog;
+    }
+
+    public static void toMonospacedFont(Context context, TextView textView)
+    {
+        textView.setTextSize(14);
+        Typeface face = ResourcesCompat.getFont(context, R.font.noto_mono_regular);
+        textView.setTypeface(face);
     }
 
     public static String createInfoText(Context context)
@@ -285,5 +321,24 @@ public final class Utils
                         "Copyright © %s Alexander Steinhauer",
                 getVersionName(context),
                 Calendar.getInstance().get(Calendar.YEAR));
+    }
+
+    public static List<Integer> indexesOf(String text, String word)
+    {
+        List<Integer> indexes = new ArrayList<>();
+        int offset = 0;
+
+        while (text.contains(word))
+        {
+            int start = text.indexOf(word);
+            int end = start + word.length();
+
+            indexes.add(start + offset);
+            text = text.substring(0, start).concat(text.substring(end));
+
+            offset += word.length();
+        }
+
+        return indexes;
     }
 }

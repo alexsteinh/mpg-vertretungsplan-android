@@ -20,12 +20,12 @@ import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.view.ViewPager;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
+import android.support.v7.widget.Toolbar;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity
     
     private void log(String message)
     {
-        Log.d(TAG, message);
+        Log.d(TAG + "(" + toString().split("@")[1] + ")", message);
     }
 
     @Override
@@ -155,11 +155,19 @@ public class MainActivity extends AppCompatActivity
                 }
             }
 
+            // - Delete key "init_preferences"
+            // - New vertretungsplan-api v1.2.2 -> Invalidate offline tables
+            if (oldVersionCode <= 17)
+            {
+                editor.remove("init_preferences");
+                editor.putBoolean(getString(R.string.saved_offline_available), false);
+            }
+
             editor.apply();
         }
 
         // Set theme (with customizations)
-        theme = CustomThemes.changeTheme(this);
+        theme = CustomThemes.changeTheme(this, false);
 
         setContentView(R.layout.activity_main);
 
@@ -171,12 +179,9 @@ public class MainActivity extends AppCompatActivity
         mainLayout = findViewById(R.id.main_layout);
         mainLayout.setBackgroundColor(theme.getLayoutColor());
 
-        // Turn action bar elevation off
-        ActionBar bar = getSupportActionBar();
-        if (bar != null)
-        {
-            bar.setElevation(0);
-        }
+        Toolbar toolbar = findViewById(theme.isLight() ? R.id.toolbar_light : R.id.toolbar_dark);
+        toolbar.setVisibility(View.VISIBLE);
+        setSupportActionBar(toolbar);
 
         // Create a TableFragment foreach week
         fragments = new TableFragment[2];
@@ -209,15 +214,11 @@ public class MainActivity extends AppCompatActivity
 
         tabLayout = findViewById(R.id.tab_layout);
         tabLayout.setBackgroundColor(Utils.getThemePrimaryColor(this));
-        tabLayout.setTabTextColors(theme.getTabTextColor() - (70 << 24), theme.getTabTextColor());
+        tabLayout.setTabTextColors(theme.getTabTextColor() - ((theme.isLight() ? 138 : 76) << 24), theme.getTabTextColor());
         tabLayout.setSelectedTabIndicatorColor(theme.getIndicatorColor());
         tabLayout.setTabRippleColor(ColorStateList.valueOf(theme.getTabRippleColor()));
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-        {
-            tabLayout.setElevation(dpToPx(4));
-        }
-        else
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
         {
             // Add shadow below TabLayout for pre-Lollipop devices
             View shadow = new View(this);
@@ -226,7 +227,6 @@ public class MainActivity extends AppCompatActivity
 
             LinearLayout layout = (LinearLayout) mainLayout.getChildAt(0);
             layout.addView(shadow, 1);
-
         }
 
         tabLayout.setupWithViewPager(viewPager);
@@ -251,26 +251,17 @@ public class MainActivity extends AppCompatActivity
             viewPager.setCurrentItem(1);
         }
 
-        for (TableFragment fragment : fragments)
-        {
-            SwipeRefreshLayout refreshLayout = fragment.getRefreshLayout();
-            refreshLayout.setOnRefreshListener(() ->
-            {
-                downloadTablesAndShow(Grade.parse(preferences.getString(getString(R.string.saved_grade), null)), true, true);
-            });
-        }
-
         // Register listener to be noticed if user changes something in the settings
         preferenceChangeListener = (sharedPrefs, s) ->
         {
-            if (registerPreferencesChanges && !preferences.getBoolean(getString(R.string.saved_init_preferences), false))
+            if (registerPreferencesChanges)
             {
                 // s = (String) key of the changed value
                 log("Key of changed value: " + s);
                 if (s.equals(getString(R.string.saved_grade)))
                 {
                     // Load new table
-                    downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true, false);
+                    downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true);
                 }
                 else if (s.contains("filter_enabled"))
                 {
@@ -283,7 +274,16 @@ public class MainActivity extends AppCompatActivity
                 else if (s.equals("theme"))
                 {
                     // To change the theme, recreate the activity
-                    recreate();
+                    preferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
+
+                    if (Build.VERSION.SDK_INT >= 28)
+                    {
+                        releaseInstance();
+                    }
+                    else
+                    {
+                        recreate();
+                    }
                 }
                 else if (s.equals(getString(R.string.saved_notifications_enabled)))
                 {
@@ -327,7 +327,7 @@ public class MainActivity extends AppCompatActivity
                     {
                         // Download from internet
                         log("Download tables");
-                        downloadTablesAndShow(Grade.parse(grade), true, false);
+                        downloadTablesAndShow(Grade.parse(grade), true);
                     }
                     else
                     {
@@ -445,13 +445,25 @@ public class MainActivity extends AppCompatActivity
 
     private AlertDialog createWelcomeDialog()
     {
-        return new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.welcome)
                 .setMessage(getString(R.string.welcome_message,
+                        getString(R.string.changelog_message),
                         String.valueOf(Calendar.getInstance().get(Calendar.YEAR))))
                 .setPositiveButton("OK", null)
-                .setOnDismissListener(dialog -> createGradeDialog().show())
+                .setOnDismissListener(d -> createGradeDialog().show())
                 .create();
+
+        dialog.setOnShowListener(d ->
+        {
+            TextView text = dialog.findViewById(android.R.id.message);
+            if (text != null)
+            {
+                Utils.toMonospacedFont(this, text);
+            }
+        });
+
+        return dialog;
     }
 
     private AlertDialog createGradeDialog()
@@ -527,11 +539,20 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        int color;
 
         if (theme.isLight())
         {
-            menu.findItem(R.id.action_reload).getIcon().setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
-            menu.findItem(R.id.action_settings).getIcon().setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_ATOP);
+            color = Color.BLACK;
+        }
+        else
+        {
+            color = Color.WHITE;
+        }
+
+        for (int i = 0; i < menu.size(); i++)
+        {
+            menu.getItem(i).getIcon().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
         }
 
         return super.onCreateOptionsMenu(menu);
@@ -551,7 +572,7 @@ public class MainActivity extends AppCompatActivity
                     Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), ""));
                     if (grade != null)
                     {
-                        downloadTablesAndShow(grade, true, false);
+                        downloadTablesAndShow(grade, true);
                     }
                     else
                     {
@@ -566,14 +587,14 @@ public class MainActivity extends AppCompatActivity
     // Downloads both ReplacementTables (for this and the next week) async
     // and adds them after downloading to the MainLayout
     // without blocking the UI thread.
-    private void downloadTablesAndShow(Grade grade, boolean saveTables, boolean swipeRefresh)
+    private void downloadTablesAndShow(Grade grade, boolean saveTables)
     {
         // Check if we have a valid network connection
         if (isNetworkAvailable())
         {
             isDownloadingTables = true;
 
-            showProgressBar(swipeRefresh);
+            showProgressBar();
 
             new Thread(() ->
             {
@@ -624,11 +645,7 @@ public class MainActivity extends AppCompatActivity
                     e.printStackTrace();
                 }
 
-                runOnUiThread(() ->
-                {
-                    hideProgressBar();
-                    showTables(tables);
-                });
+                runOnUiThread(() -> showTables(tables));
                 
                 if (saveTables)
                 {
@@ -649,10 +666,10 @@ public class MainActivity extends AppCompatActivity
 
                         log("Saved tables to path " + path);
                     }
-                    catch (IOException e)
+                    catch (Exception e)
                     {
                         runOnUiThread(() -> Toast
-                                .makeText(this, getString(R.string.low_memory), Toast.LENGTH_SHORT)
+                                .makeText(this, getString(R.string.low_memory), Toast.LENGTH_LONG)
                                 .show());
                     }
                 }
@@ -664,7 +681,7 @@ public class MainActivity extends AppCompatActivity
         {
             // Network is not available...
             Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables, false))
+                    .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables))
                     .show();
         }
     }
@@ -729,11 +746,7 @@ public class MainActivity extends AppCompatActivity
 
                     // Setup card view with layout
                     CardView card = createCard();
-                    LinearLayout cardLayout = new LinearLayout(this);
-                    cardLayout.setOrientation(LinearLayout.VERTICAL);
-                    cardLayout.setGravity(Gravity.CENTER);
-                    cardLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT));
+                    LinearLayout cardLayout = createCardLayout();
 
                     String date = dates[i];
                     String day = days[i];
@@ -797,25 +810,13 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void showProgressBar(boolean swipeRefresh)
+    private void showProgressBar()
     {
         for (TableFragment fragment : fragments)
         {
             LinearLayout layout = fragment.getLayout();
             layout.removeAllViews();
-
-            if (!swipeRefresh)
-            {
-                layout.addView(createProgressBar());
-            }
-        }
-    }
-
-    private void hideProgressBar()
-    {
-        for (TableFragment fragment : fragments)
-        {
-            fragment.getRefreshLayout().setRefreshing(false);
+            layout.addView(createProgressBar());
         }
     }
 
@@ -885,7 +886,42 @@ public class MainActivity extends AppCompatActivity
         text.setGravity(Gravity.CENTER);
         text.setTextColor(theme.getTextColor());
         text.setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
-        text.setText(message.getText());
+
+        String messageText = message.getText();
+        // Mark text red if the message indicates that something was cancelled
+        if (messageText.indexOf("fällt") < messageText.indexOf("aus"))
+        {
+            SpannableStringBuilder str = new SpannableStringBuilder(messageText);
+            int color = theme.getImportantTextColor();
+
+            List<Integer> f_indexes = Utils.indexesOf(messageText, "fällt");
+            List<Integer> a_indexes = Utils.indexesOf(messageText, "aus");
+
+            if (f_indexes.size() == a_indexes.size())
+            {
+                int size = f_indexes.size();
+                for (int i = 0; i < size; i++)
+                {
+                    int f_start = f_indexes.get(i);
+                    int a_start = a_indexes.get(i);
+
+                    if (f_start < a_start)
+                    {
+                        int f_end = f_start + "fällt".length();
+                        int a_end = a_start + "aus".length();
+
+                        str.setSpan(new ForegroundColorSpan(color), f_start, f_end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        str.setSpan(new ForegroundColorSpan(color), a_start, a_end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                }
+            }
+
+            text.setText(str);
+        }
+        else
+        {
+            text.setText(messageText);
+        }
 
         // Clipboard functionality
         // When a message is clicked for a longer time,
@@ -1033,6 +1069,16 @@ public class MainActivity extends AppCompatActivity
         card.setRadius(dpToPx(8));
         card.getBackground().setColorFilter(theme.getCardColor(), PorterDuff.Mode.SRC);
         return card;
+    }
+
+    private LinearLayout createCardLayout()
+    {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setGravity(Gravity.CENTER);
+        layout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        return layout;
     }
 
     // Opens the preference screen
