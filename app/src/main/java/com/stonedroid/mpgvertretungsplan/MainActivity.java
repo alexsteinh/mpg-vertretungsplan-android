@@ -92,13 +92,14 @@ public class MainActivity extends AppCompatActivity
         int versionCode = Utils.getVersionCode(this);
 
         // Display changelog if user updated to a newer version
+        boolean displayChangelog = false;
         int oldVersionCode = preferences.getInt(getString(R.string.saved_version_code), Integer.MAX_VALUE);
         if (versionCode > oldVersionCode)
         {
             // If were a here, the user made an update and not a new installation
             SharedPreferences.Editor editor = preferences.edit();
 
-            Utils.createChangelog(this).show();
+            displayChangelog = true;
 
             // - Convert "Aus" to "Alle anzeigen" and "Alle blockieren" to "Nichts anzeigen"
             //   for users coming from version 13 or below
@@ -170,6 +171,11 @@ public class MainActivity extends AppCompatActivity
         theme = CustomThemes.changeTheme(this, false);
 
         setContentView(R.layout.activity_main);
+
+        if (displayChangelog)
+        {
+            Utils.createChangelog(this).show();
+        }
 
         preferences.edit()
                 .putInt(getString(R.string.saved_version_code), versionCode)
