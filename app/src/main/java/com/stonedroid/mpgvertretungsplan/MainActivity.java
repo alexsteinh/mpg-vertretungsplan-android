@@ -262,8 +262,19 @@ public class MainActivity extends AppCompatActivity
             SwipeRefreshLayout refreshLayout = fragment.getRefreshLayout();
             refreshLayout.setOnRefreshListener(() ->
             {
-                downloadTablesAndShow(Grade.parse(preferences.getString(getString(R.string.saved_grade), null)), true, true);
+                if (!isDownloadingTables)
+                {
+                    downloadTablesAndShow(Grade.parse(preferences.getString(getString(R.string.saved_grade), null)), true, true);
+                }
+                else
+                {
+                    refreshLayout.setRefreshing(false);
+                }
             });
+            if (!preferences.getBoolean(getString(R.string.saved_swipe_refresh_enabled), true))
+            {
+                refreshLayout.setEnabled(false);
+            }
         }
 
         // Register listener to be noticed if user changes something in the settings
@@ -310,6 +321,18 @@ public class MainActivity extends AppCompatActivity
                     else
                     {
                         disableNotifications();
+                    }
+                }
+                else if (s.equals(getString(R.string.saved_swipe_refresh_enabled)))
+                {
+                    boolean enabled = preferences.getBoolean(s, true);
+                    if (enabled)
+                    {
+                        enableSwipeRefresh();
+                    }
+                    else
+                    {
+                        disableSwipeRefresh();
                     }
                 }
             }
@@ -828,6 +851,22 @@ public class MainActivity extends AppCompatActivity
             {
                 layout.addView(createNoTableView());
             }
+        }
+    }
+
+    private void enableSwipeRefresh()
+    {
+        for (TableFragment fragment : fragments)
+        {
+            fragment.getRefreshLayout().setEnabled(true);
+        }
+    }
+
+    private void disableSwipeRefresh()
+    {
+        for (TableFragment fragment : fragments)
+        {
+            fragment.getRefreshLayout().setEnabled(false);
         }
     }
 

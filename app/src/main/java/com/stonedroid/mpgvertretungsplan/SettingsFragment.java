@@ -141,6 +141,15 @@ public class SettingsFragment extends PreferenceFragmentCompat
             pref.setDefaultValue(true);
             screen.addPreference(pref);
         }
+
+        // Add swipe refresh option
+        {
+            CheckBoxPreference pref = new CheckBoxPreference(context);
+            pref.setTitle(getString(R.string.pref_title_swipe_refresh_enabled));
+            pref.setKey(getString(R.string.saved_swipe_refresh_enabled));
+            pref.setDefaultValue(true);
+            screen.addPreference(pref);
+        }
     }
 
     private void addNotificationPreference()

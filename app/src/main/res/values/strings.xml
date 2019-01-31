@@ -48,4 +48,6 @@
     <string name="pref_title_info">Info</string>
     <string name="pref_title_rounded_corners">Abgerundete Ecken</string>
     <string name="saved_rounded_corners">rounded_corners</string>
+    <string name="pref_title_swipe_refresh_enabled">Wischen zum Aktualisieren</string>
+    <string name="saved_swipe_refresh_enabled">swipe_refresh_enabled</string>
 </resources>
