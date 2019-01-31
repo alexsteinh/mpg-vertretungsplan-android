@@ -20,6 +20,7 @@ import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -256,6 +257,15 @@ public class MainActivity extends AppCompatActivity
             viewPager.setCurrentItem(1);
         }
 
+        for (TableFragment fragment : fragments)
+        {
+            SwipeRefreshLayout refreshLayout = fragment.getRefreshLayout();
+            refreshLayout.setOnRefreshListener(() ->
+            {
+                downloadTablesAndShow(Grade.parse(preferences.getString(getString(R.string.saved_grade), null)), true, true);
+            });
+        }
+
         // Register listener to be noticed if user changes something in the settings
         preferenceChangeListener = (sharedPrefs, s) ->
         {
@@ -266,7 +276,7 @@ public class MainActivity extends AppCompatActivity
                 if (s.equals(getString(R.string.saved_grade)))
                 {
                     // Load new table
-                    downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true);
+                    downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true, false);
                 }
                 else if (s.contains("filter_enabled") || s.equals(getString(R.string.saved_rounded_corners)))
                 {
@@ -332,7 +342,7 @@ public class MainActivity extends AppCompatActivity
                     {
                         // Download from internet
                         log("Download tables");
-                        downloadTablesAndShow(Grade.parse(grade), true);
+                        downloadTablesAndShow(Grade.parse(grade), true, false);
                     }
                     else
                     {
@@ -577,7 +587,7 @@ public class MainActivity extends AppCompatActivity
                     Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), ""));
                     if (grade != null)
                     {
-                        downloadTablesAndShow(grade, true);
+                        downloadTablesAndShow(grade, true, false);
                     }
                     else
                     {
@@ -592,14 +602,14 @@ public class MainActivity extends AppCompatActivity
     // Downloads both ReplacementTables (for this and the next week) async
     // and adds them after downloading to the MainLayout
     // without blocking the UI thread.
-    private void downloadTablesAndShow(Grade grade, boolean saveTables)
+    private void downloadTablesAndShow(Grade grade, boolean saveTables, boolean swipeRefresh)
     {
         // Check if we have a valid network connection
         if (isNetworkAvailable())
         {
             isDownloadingTables = true;
 
-            showProgressBar();
+            showProgressBar(swipeRefresh);
 
             new Thread(() ->
             {
@@ -650,7 +660,11 @@ public class MainActivity extends AppCompatActivity
                     e.printStackTrace();
                 }
 
-                runOnUiThread(() -> showTables(tables));
+                runOnUiThread(() ->
+                {
+                    hideProgressBar();
+                    showTables(tables);
+                });
                 
                 if (saveTables)
                 {
@@ -685,8 +699,10 @@ public class MainActivity extends AppCompatActivity
         else
         {
             // Network is not available...
+            hideProgressBar();
+
             Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables))
+                    .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables, false))
                     .show();
         }
     }
@@ -815,13 +831,25 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void showProgressBar()
+    private void showProgressBar(boolean swipeRefresh)
     {
         for (TableFragment fragment : fragments)
         {
             LinearLayout layout = fragment.getLayout();
             layout.removeAllViews();
-            layout.addView(createProgressBar());
+
+            if (!swipeRefresh)
+            {
+                layout.addView(createProgressBar());
+            }
+        }
+    }
+
+    private void hideProgressBar()
+    {
+        for (TableFragment fragment : fragments)
+        {
+            fragment.getRefreshLayout().setRefreshing(false);
         }
     }
 
