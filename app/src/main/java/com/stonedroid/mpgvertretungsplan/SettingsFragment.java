@@ -52,7 +52,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         screen = getPreferenceScreen();
 
         addGradePreference();
-        addThemePreference();
+        addCustomizationPreferences();
         addNotificationPreference();
         addFilterPreference();
         addAboutTheAppPreferences();
@@ -102,7 +102,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         showValue(gradePref);
     }
 
-    private void addThemePreference()
+    private void addCustomizationPreferences()
     {
         // Add new preference category
         PreferenceCategory category = new PreferenceCategory(context);
@@ -110,26 +110,37 @@ public class SettingsFragment extends PreferenceFragmentCompat
         screen.addPreference(category);
 
         // Add Theme options
-        ListPreference pref = new ListPreference(context);
-        CharSequence[] themeNames = CustomThemes.getSimpleNames();
-        pref.setTitle(getString(R.string.pref_title_theme));
-        pref.setKey(getString(R.string.saved_theme));
-        pref.setEntries(themeNames);
-        pref.setEntryValues(themeNames);
-        pref.setDefaultValue(themeNames[0]);
-        pref.setOnPreferenceChangeListener((preference, newValue) ->
         {
-            showValue(preference, newValue);
-            FragmentActivity parent = getActivity();
-            if (parent != null)
+            ListPreference pref = new ListPreference(context);
+            CharSequence[] themeNames = CustomThemes.getSimpleNames();
+            pref.setTitle(getString(R.string.pref_title_theme));
+            pref.setKey(getString(R.string.saved_theme));
+            pref.setEntries(themeNames);
+            pref.setEntryValues(themeNames);
+            pref.setDefaultValue(themeNames[0]);
+            pref.setOnPreferenceChangeListener((preference, newValue) ->
             {
-                parent.recreate();
-            }
-            return true;
-        });
-        // Add preference to screen
-        screen.addPreference(pref);
-        showValue(pref);
+                showValue(preference, newValue);
+                FragmentActivity parent = getActivity();
+                if (parent != null)
+                {
+                    parent.recreate();
+                }
+                return true;
+            });
+            // Add preference to screen
+            screen.addPreference(pref);
+            showValue(pref);
+        }
+
+        // Add round corners option
+        {
+            CheckBoxPreference pref = new CheckBoxPreference(context);
+            pref.setTitle(getString(R.string.pref_title_rounded_corners));
+            pref.setKey(getString(R.string.saved_rounded_corners));
+            pref.setDefaultValue(true);
+            screen.addPreference(pref);
+        }
     }
 
     private void addNotificationPreference()

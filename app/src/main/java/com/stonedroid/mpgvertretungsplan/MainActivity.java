@@ -42,7 +42,6 @@ import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import de.stonedroid.vertretungsplan.*;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -269,7 +268,7 @@ public class MainActivity extends AppCompatActivity
                     // Load new table
                     downloadTablesAndShow(Grade.parse(sharedPrefs.getString(s, "")), true);
                 }
-                else if (s.contains("filter_enabled"))
+                else if (s.contains("filter_enabled") || s.equals(getString(R.string.saved_rounded_corners)))
                 {
                     // Always show the table from scratch if filter settings were altered
                     if (tables != null)
@@ -1072,7 +1071,7 @@ public class MainActivity extends AppCompatActivity
         CardView card = new CardView(this);
         //card.setMinimumHeight(dpToPx(32));
         card.setCardElevation(dpToPx(1));
-        card.setRadius(dpToPx(8));
+        card.setRadius(dpToPx(preferences.getBoolean(getString(R.string.saved_rounded_corners), true) ? 8 : 0));
         card.getBackground().setColorFilter(theme.getCardColor(), PorterDuff.Mode.SRC);
         return card;
     }

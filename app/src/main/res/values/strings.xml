@@ -46,4 +46,6 @@
     <string name="pref_category_about_the_app">Über die App</string>
     <string name="pref_title_changelog">Changelog</string>
     <string name="pref_title_info">Info</string>
+    <string name="pref_title_rounded_corners">Abgerundete Ecken</string>
+    <string name="saved_rounded_corners">rounded_corners</string>
 </resources>
