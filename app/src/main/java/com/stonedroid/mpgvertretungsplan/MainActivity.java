@@ -470,7 +470,9 @@ public class MainActivity extends AppCompatActivity
                     runOnUiThread(() ->
                     {
                         showTables(tables);
-                        Snackbar.make(mainLayout, R.string.offline_version, Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(mainLayout, R.string.offline_version, Snackbar.LENGTH_SHORT)
+                                .setActionTextColor(theme.getActionTextColor())
+                                .show();
                     });
                 }
             }
@@ -726,6 +728,7 @@ public class MainActivity extends AppCompatActivity
 
             Snackbar.make(mainLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
                     .setAction(R.string.retry, v -> downloadTablesAndShow(grade, saveTables, false))
+                    .setActionTextColor(theme.getActionTextColor())
                     .show();
         }
     }

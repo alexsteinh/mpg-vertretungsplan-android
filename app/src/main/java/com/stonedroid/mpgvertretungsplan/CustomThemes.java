@@ -130,6 +130,12 @@ public final class CustomThemes
         }
 
         @Override
+        public int getActionTextColor()
+        {
+            return Color.WHITE;
+        }
+
+        @Override
         public int getResId()
         {
             return R.style.DarkTheme;
@@ -177,6 +183,12 @@ public final class CustomThemes
         public int getTextColor()
         {
             return Color.BLACK;
+        }
+
+        @Override
+        public int getActionTextColor()
+        {
+            return Color.WHITE;
         }
 
         @Override

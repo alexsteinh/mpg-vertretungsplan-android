@@ -51,4 +51,10 @@ public abstract class SimpleCustomTheme extends CustomTheme
     {
         return isLight() ? Color.BLACK : Color.WHITE;
     }
+
+    @Override
+    public int getActionTextColor()
+    {
+        return Utils.getThemeAccentColor(context);
+    }
 }
