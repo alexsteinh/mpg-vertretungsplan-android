@@ -343,4 +343,19 @@ public final class Utils
 
         return indexes;
     }
+
+    public static boolean hasFlag(int value, int flag)
+    {
+        return (value & flag) == flag;
+    }
+
+    public static int addFlag(int value, int flag)
+    {
+        return value | flag;
+    }
+
+    public static int removeFlag(int value, int flag)
+    {
+        return flag & ~value;
+    }
 }

@@ -25,20 +25,59 @@ public abstract class CustomTheme
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
         {
+            int flags = context.getWindow().getDecorView().getSystemUiVisibility();
+
+            // Light status bar
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             {
-                int flags = isLight()
-                        ? View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                        : 0;
-
-                context.getWindow().getDecorView().setSystemUiVisibility(flags);
+                if (isLight())
+                {
+                    flags = Utils.addFlag(flags, View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                }
+                else
+                {
+                    if (Utils.hasFlag(flags, View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR))
+                    {
+                        flags = Utils.removeFlag(flags, View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                    }
+                }
             }
 
+            // Light navigation bar
+            if (Build.VERSION.SDK_INT >= 26)
+            {
+                if (isLight())
+                {
+                    flags = Utils.addFlag(flags, View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+                    context.getWindow().setNavigationBarColor(Color.WHITE);
+                }
+                else
+                {
+                    if (Utils.hasFlag(flags, View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR))
+                    {
+                        flags = Utils.removeFlag(flags, View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+                    }
+
+                    context.getWindow().setNavigationBarColor(Color.BLACK);
+                }
+            }
+
+            // Task description in task manager
             if (Build.VERSION.SDK_INT >= 28)
             {
                 context.setTaskDescription(new ActivityManager.TaskDescription(null,
                         R.mipmap.ic_launcher_round,
                         Utils.getThemePrimaryColor(context)));
+
+                // Light navigation bar divider
+                if (isLight())
+                {
+                    context.getWindow().setNavigationBarDividerColor(Color.parseColor("#e0e0e0"));
+                }
+                else
+                {
+                    context.getWindow().setNavigationBarDividerColor(Color.BLACK);
+                }
             }
             else
             {
@@ -50,6 +89,8 @@ public abstract class CustomTheme
 
                 bmp.recycle();
             }
+
+            context.getWindow().getDecorView().setSystemUiVisibility(flags);
         }
     }
 
@@ -62,6 +103,7 @@ public abstract class CustomTheme
     public abstract int getCardColor();
     public abstract int getLayoutColor();
     public abstract int getIndicatorColor();
+    public abstract int getActionTextColor();
 
     public abstract int getResId();
     public abstract int getResIdNoActionBar();
