@@ -134,45 +134,47 @@ public final class Utils
         {
             if (replacement.getPeriod().length() == 1)
             {
-                summary = "Am %s fällt Fach %s in der %s. Stunde aus";
+                summary = "fällt Fach %s in der %s. Stunde aus";
             }
             else
             {
-                summary = "Am %s fällt Fach %s in den Stunden %s aus";
+                summary = "fällt Fach %s in den Stunden %s aus";
             }
 
-            summary = String.format(summary, replacement.getDate(), replacement.getOldSubject(),
+            summary = String.format(summary, replacement.getOldSubject(),
                     replacement.getPeriod());
         }
         else if (replacement.getText().equals("Raumänderung"))
         {
             if (replacement.getPeriod().length() == 1)
             {
-                summary = "Am %s Fach %s in der %s. Stunde im Raum %s";
+                summary = "Fach %s in der %s. Stunde im Raum %s";
             }
             else
             {
-                summary = "Am %s Fach %s in den Stunden %s im Raum %s";
+                summary = "Fach %s in den Stunden %s im Raum %s";
             }
 
-            summary = String.format(summary, replacement.getDate(), replacement.getSubject(),
+            summary = String.format(summary, replacement.getSubject(),
                     replacement.getPeriod(), replacement.getRoom());
         }
         else
         {
             if (replacement.getPeriod().length() == 1)
             {
-                summary = "Am %s Fach %s statt %s in der %s. Stunde im Raum %s, da %s";
+                summary = "Fach %s statt %s in der %s. Stunde im Raum %s, da %s";
             }
             else
             {
-                summary = "Am %s Fach %s statt %s in den Stunden %s im Raum %s, da %s";
+                summary = "Fach %s statt %s in den Stunden %s im Raum %s, da %s";
             }
 
-            summary = String.format(summary, replacement.getDate(), replacement.getSubject(),
+            summary = String.format(summary, replacement.getSubject(),
                     replacement.getOldSubject(), replacement.getPeriod(), replacement.getRoom(),
                     replacement.getText());
         }
+
+        summary = String.format("Am %s (%s) ", replacement.getDate(), replacement.getDay()).concat(summary);
 
         if ((!summary.endsWith(".")) && (!summary.endsWith("!")))
         {
@@ -340,5 +342,20 @@ public final class Utils
         }
 
         return indexes;
+    }
+
+    public static boolean hasFlag(int value, int flag)
+    {
+        return (value & flag) == flag;
+    }
+
+    public static int addFlag(int value, int flag)
+    {
+        return value | flag;
+    }
+
+    public static int removeFlag(int value, int flag)
+    {
+        return flag & ~value;
     }
 }

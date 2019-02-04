@@ -130,6 +130,12 @@ public final class CustomThemes
         }
 
         @Override
+        public int getActionTextColor()
+        {
+            return Color.WHITE;
+        }
+
+        @Override
         public int getResId()
         {
             return R.style.DarkTheme;
@@ -177,6 +183,12 @@ public final class CustomThemes
         public int getTextColor()
         {
             return Color.BLACK;
+        }
+
+        @Override
+        public int getActionTextColor()
+        {
+            return Color.WHITE;
         }
 
         @Override
@@ -259,6 +271,50 @@ public final class CustomThemes
         public boolean isLight()
         {
             return false;
+        }
+    }
+
+    public static class PinkTheme extends SimpleCustomTheme
+    {
+        public PinkTheme(Activity context)
+        {
+            super(context);
+        }
+
+        @Override
+        public int getCardColor()
+        {
+            return Color.WHITE;
+        }
+
+        @Override
+        public int getTextColor()
+        {
+            return Color.BLACK;
+        }
+
+        @Override
+        public String getName()
+        {
+            return PinkTheme.class.getSimpleName();
+        }
+
+        @Override
+        public int getResId()
+        {
+            return R.style.PinkTheme;
+        }
+
+        @Override
+        public int getResIdNoActionBar()
+        {
+            return R.style.PinkTheme_no_action_bar;
+        }
+
+        @Override
+        public boolean isLight()
+        {
+            return true;
         }
     }
 }
