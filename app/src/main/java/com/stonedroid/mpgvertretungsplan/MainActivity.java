@@ -269,13 +269,6 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         recreate();
                     }
-                } else if (s.equals(getString(R.string.saved_notifications_enabled))) {
-                    boolean enabled = preferences.getBoolean(s, false);
-                    if (enabled) {
-                        enableNotifications();
-                    } else {
-                        disableNotifications();
-                    }
                 } else if (s.equals(getString(R.string.saved_swipe_refresh_enabled))) {
                     boolean enabled = preferences.getBoolean(s, true);
                     if (enabled) {
@@ -326,28 +319,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void enableNotifications() {
-        createNotificationChannel();
-
-        Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build();
-
-        PeriodicWorkRequest work = new PeriodicWorkRequest.Builder(NotificationWorker.class,
-                30, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build();
-
-        preferences.edit()
-                .putString(getString(R.string.saved_worker_id), work.getId().toString())
-                .apply();
-
-        WorkManager manager = WorkManager.getInstance();
-        manager.enqueue(work);
-
-        log(work.getId().toString());
-    }
-
     private void disableNotifications() {
         /*String id = preferences.getString(getString(R.string.saved_worker_id), null);
         if (id != null)
@@ -355,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
             WorkManager.getInstance().cancelWorkById(UUID.fromString(id));
         }*/
 
-        WorkManager.getInstance().cancelAllWork();
+        WorkManager.getInstance(this).cancelAllWork();
     }
 
     private void createNotificationChannel() {
@@ -370,6 +341,13 @@ public class MainActivity extends AppCompatActivity {
 
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(channel);
+        }
+    }
+
+    private void deleteNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.deleteNotificationChannel(CHANNEL_ID);
         }
     }
 
@@ -652,10 +630,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 // Get all necessary information
-                ArrayList<Replacement> replacements = preferences
-                        .getBoolean(getString(R.string.saved_filter_enabled), false)
-                        ? new ArrayList<>(Utils.filterReplacements(this, table))
-                        : new ArrayList<>(table.getReplacements());
+                ArrayList<Replacement> replacements = new ArrayList<>(table.getReplacements());
                 ArrayList<Message> messages = new ArrayList<>(table.getMessages());
                 String[] dates = table.getDates();
                 String[] days = table.getDays();

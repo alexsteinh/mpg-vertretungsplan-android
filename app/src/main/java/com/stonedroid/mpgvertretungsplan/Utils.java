@@ -42,59 +42,6 @@ public final class Utils {
         return obj;
     }
 
-    public static List<Replacement> filterReplacements(Context context, ReplacementTable table) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
-        List<Replacement> replacements = table.getReplacements();
-        Grade grade = table.getGrade();
-
-        if (grade == null || (!grade.toString().equals("11") && !grade.toString().equals("12"))) {
-            return replacements;
-        }
-
-        // Load all subject and synonyms
-        Map<String, String> synonyms = Subject.getSynonyms();
-
-        ArrayList<Replacement> filteredReplacements = new ArrayList<>();
-
-        for (Replacement replacement : replacements) {
-            try {
-                String oldSubject = replacement.getOldSubject();
-                // Is it a synonym? Some subjects from grade 11 have other names then in 12
-                // Subject::getSynonyms contains all of them, so we can replace the synonyms with
-                // the "real" subject names, which the filter can process
-                String o_oldSubject = oldSubject;
-                oldSubject = synonyms.get(oldSubject);
-                if (oldSubject == null) {
-                    // Subject is not a synonym
-                    oldSubject = o_oldSubject;
-                }
-
-                String subjectName = Subject.getSubjectName(oldSubject);
-
-                // Look at user preferences what to do next
-                if (!prefs.getBoolean(context.getString(R.string.saved_filter_multi_select_enabled), false)) {
-                    String course = prefs.getString("filter_enabled_" + subjectName, null);
-
-                    if (course == null || course.equals(SettingsFragment.SHOW_ALL) || course.contains(oldSubject)) {
-                        // Let it through the filter
-                        filteredReplacements.add(replacement);
-                    }
-                } else {
-                    Set<String> courses = prefs.getStringSet("filter_enabled_" + subjectName, null);
-
-                    if (courses == null || courses.contains(oldSubject)) {
-                        filteredReplacements.add(replacement);
-                    }
-                }
-            } catch (Exception e) {
-                // Replacement's subject is not listed -> let it through the filter
-                filteredReplacements.add(replacement);
-            }
-        }
-
-        return filteredReplacements;
-    }
 
     public static boolean containsAny(List<? extends Comparable> list1, List<? extends Comparable> list2) {
         for (Comparable comp1 : list1) {
