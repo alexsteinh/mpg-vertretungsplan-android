@@ -2,7 +2,7 @@ package com.stonedroid.mpgvertretungsplan;
 
 import android.app.Activity;
 import android.graphics.Color;
-import android.support.v7.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 
 import java.lang.reflect.Constructor;
 
