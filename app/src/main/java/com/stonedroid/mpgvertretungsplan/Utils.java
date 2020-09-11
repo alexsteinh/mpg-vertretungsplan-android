@@ -22,11 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public final class Utils
-{
+public final class Utils {
     // Saves an object, which implements the Serializable interface.
-    public static void saveObject(Object obj, String file) throws IOException
-    {
+    public static void saveObject(Object obj, String file) throws IOException {
         FileOutputStream fos = new FileOutputStream(file);
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         // Save object
@@ -35,8 +33,7 @@ public final class Utils
     }
 
     // Loads an object, which was serialized before.
-    public static Object loadObject(String file) throws IOException, ClassNotFoundException
-    {
+    public static Object loadObject(String file) throws IOException, ClassNotFoundException {
         FileInputStream fis = new FileInputStream(file);
         ObjectInputStream ois = new ObjectInputStream(fis);
         // Load object
@@ -45,15 +42,13 @@ public final class Utils
         return obj;
     }
 
-    public static List<Replacement> filterReplacements(Context context, ReplacementTable table)
-    {
+    public static List<Replacement> filterReplacements(Context context, ReplacementTable table) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
         List<Replacement> replacements = table.getReplacements();
         Grade grade = table.getGrade();
 
-        if (grade == null || (!grade.toString().equals("11") && !grade.toString().equals("12")))
-        {
+        if (grade == null || (!grade.toString().equals("11") && !grade.toString().equals("12"))) {
             return replacements;
         }
 
@@ -62,18 +57,15 @@ public final class Utils
 
         ArrayList<Replacement> filteredReplacements = new ArrayList<>();
 
-        for (Replacement replacement : replacements)
-        {
-            try
-            {
+        for (Replacement replacement : replacements) {
+            try {
                 String oldSubject = replacement.getOldSubject();
                 // Is it a synonym? Some subjects from grade 11 have other names then in 12
                 // Subject::getSynonyms contains all of them, so we can replace the synonyms with
                 // the "real" subject names, which the filter can process
                 String o_oldSubject = oldSubject;
                 oldSubject = synonyms.get(oldSubject);
-                if (oldSubject == null)
-                {
+                if (oldSubject == null) {
                     // Subject is not a synonym
                     oldSubject = o_oldSubject;
                 }
@@ -81,28 +73,21 @@ public final class Utils
                 String subjectName = Subject.getSubjectName(oldSubject);
 
                 // Look at user preferences what to do next
-                if (!prefs.getBoolean(context.getString(R.string.saved_filter_multi_select_enabled), false))
-                {
+                if (!prefs.getBoolean(context.getString(R.string.saved_filter_multi_select_enabled), false)) {
                     String course = prefs.getString("filter_enabled_" + subjectName, null);
 
-                    if (course == null || course.equals(SettingsFragment.SHOW_ALL) || course.contains(oldSubject))
-                    {
+                    if (course == null || course.equals(SettingsFragment.SHOW_ALL) || course.contains(oldSubject)) {
                         // Let it through the filter
                         filteredReplacements.add(replacement);
                     }
-                }
-                else
-                {
+                } else {
                     Set<String> courses = prefs.getStringSet("filter_enabled_" + subjectName, null);
 
-                    if (courses == null || courses.contains(oldSubject))
-                    {
+                    if (courses == null || courses.contains(oldSubject)) {
                         filteredReplacements.add(replacement);
                     }
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 // Replacement's subject is not listed -> let it through the filter
                 filteredReplacements.add(replacement);
             }
@@ -111,14 +96,10 @@ public final class Utils
         return filteredReplacements;
     }
 
-    public static boolean containsAny(List<? extends Comparable> list1, List<? extends Comparable> list2)
-    {
-        for (Comparable comp1 : list1)
-        {
-            for (Comparable comp2 : list2)
-            {
-                if (comp1.equals(comp2))
-                {
+    public static boolean containsAny(List<? extends Comparable> list1, List<? extends Comparable> list2) {
+        for (Comparable comp1 : list1) {
+            for (Comparable comp2 : list2) {
+                if (comp1.equals(comp2)) {
                     return true;
                 }
             }
@@ -127,45 +108,30 @@ public final class Utils
         return false;
     }
 
-    public static String getReplacementSummary(Replacement replacement)
-    {
+    public static String getReplacementSummary(Replacement replacement) {
         String summary;
-        if (replacement.getText().contains("fällt aus"))
-        {
-            if (replacement.getPeriod().length() == 1)
-            {
+        if (replacement.getText().contains("fällt aus")) {
+            if (replacement.getPeriod().length() == 1) {
                 summary = "fällt Fach %s in der %s. Stunde aus";
-            }
-            else
-            {
+            } else {
                 summary = "fällt Fach %s in den Stunden %s aus";
             }
 
             summary = String.format(summary, replacement.getOldSubject(),
                     replacement.getPeriod());
-        }
-        else if (replacement.getText().equals("Raumänderung"))
-        {
-            if (replacement.getPeriod().length() == 1)
-            {
+        } else if (replacement.getText().equals("Raumänderung")) {
+            if (replacement.getPeriod().length() == 1) {
                 summary = "Fach %s in der %s. Stunde im Raum %s";
-            }
-            else
-            {
+            } else {
                 summary = "Fach %s in den Stunden %s im Raum %s";
             }
 
             summary = String.format(summary, replacement.getSubject(),
                     replacement.getPeriod(), replacement.getRoom());
-        }
-        else
-        {
-            if (replacement.getPeriod().length() == 1)
-            {
+        } else {
+            if (replacement.getPeriod().length() == 1) {
                 summary = "Fach %s statt %s in der %s. Stunde im Raum %s, da %s";
-            }
-            else
-            {
+            } else {
                 summary = "Fach %s statt %s in den Stunden %s im Raum %s, da %s";
             }
 
@@ -176,10 +142,8 @@ public final class Utils
 
         summary = String.format("Am %s (%s) ", replacement.getDate(), replacement.getDay()).concat(summary);
 
-        if ((!summary.endsWith(".")) && (!summary.endsWith("!")))
-        {
-            if (summary.endsWith("?"))
-            {
+        if ((!summary.endsWith(".")) && (!summary.endsWith("!"))) {
+            if (summary.endsWith("?")) {
                 return summary;
             }
 
@@ -189,39 +153,32 @@ public final class Utils
         return summary;
     }
 
-    private static int getAttributeData(Context context, int attribute)
-    {
+    private static int getAttributeData(Context context, int attribute) {
         TypedValue value = new TypedValue();
         context.getTheme().resolveAttribute(attribute, value, true);
         return value.data;
     }
 
-    public static int getThemePrimaryColor(Context context)
-    {
+    public static int getThemePrimaryColor(Context context) {
         return getAttributeData(context, R.attr.colorPrimary);
     }
 
-    public static int getThemePrimaryDarkColor(Context context)
-    {
+    public static int getThemePrimaryDarkColor(Context context) {
         return getAttributeData(context, R.attr.colorPrimaryDark);
     }
 
-    public static int getThemeAccentColor(Context context)
-    {
+    public static int getThemeAccentColor(Context context) {
         return getAttributeData(context, R.attr.colorAccent);
     }
 
-    public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements)
-    {
+    public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements) {
         StringBuilder sb = new StringBuilder();
         Iterator<? extends CharSequence> iterator = elements.iterator();
 
-        while (iterator.hasNext())
-        {
+        while (iterator.hasNext()) {
             sb.append(iterator.next());
 
-            if (iterator.hasNext())
-            {
+            if (iterator.hasNext()) {
                 sb.append(delimiter);
             }
         }
@@ -229,17 +186,14 @@ public final class Utils
         return sb.toString();
     }
 
-    public static String join(CharSequence delimiter, CharSequence[] elements)
-    {
+    public static String join(CharSequence delimiter, CharSequence[] elements) {
         StringBuilder sb = new StringBuilder();
         int size = elements.length;
 
-        for (int i = 0; i < size; i++)
-        {
+        for (int i = 0; i < size; i++) {
             sb.append(elements[i]);
 
-            if (i < (size - 1))
-            {
+            if (i < (size - 1)) {
                 sb.append(delimiter);
             }
         }
@@ -247,18 +201,13 @@ public final class Utils
         return sb.toString();
     }
 
-    public static <T extends Comparable<T>> T max(T[] array)
-    {
+    public static <T extends Comparable<T>> T max(T[] array) {
         T max = null;
 
-        for (T t : array)
-        {
-            if (max == null)
-            {
+        for (T t : array) {
+            if (max == null) {
                 max = t;
-            }
-            else if (t.compareTo(max) > 0)
-            {
+            } else if (t.compareTo(max) > 0) {
                 max = t;
             }
         }
@@ -266,32 +215,25 @@ public final class Utils
         return max;
     }
 
-    private static PackageInfo getPackageInfo(Context context)
-    {
-        try
-        {
+    private static PackageInfo getPackageInfo(Context context) {
+        try {
             return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-        }
-        catch (PackageManager.NameNotFoundException e)
-        {
+        } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
 
         return null;
     }
 
-    public static String getVersionName(Context context)
-    {
+    public static String getVersionName(Context context) {
         return getPackageInfo(context).versionName;
     }
 
-    public static int getVersionCode(Context context)
-    {
+    public static int getVersionCode(Context context) {
         return getPackageInfo(context).versionCode;
     }
 
-    public static AlertDialog createChangelog(Context context)
-    {
+    public static AlertDialog createChangelog(Context context) {
         AlertDialog dialog = new AlertDialog.Builder(context)
                 .setTitle(context.getString(R.string.changelog_title))
                 .setMessage(context.getString(R.string.changelog_message))
@@ -301,8 +243,7 @@ public final class Utils
         dialog.setOnShowListener(d ->
         {
             TextView text = dialog.findViewById(android.R.id.message);
-            if (text != null)
-            {
+            if (text != null) {
                 toMonospacedFont(context, text);
             }
         });
@@ -310,28 +251,24 @@ public final class Utils
         return dialog;
     }
 
-    public static void toMonospacedFont(Context context, TextView textView)
-    {
+    public static void toMonospacedFont(Context context, TextView textView) {
         textView.setTextSize(14);
         Typeface face = ResourcesCompat.getFont(context, R.font.noto_mono_regular);
         textView.setTypeface(face);
     }
 
-    public static String createInfoText(Context context)
-    {
+    public static String createInfoText(Context context) {
         return String.format("Version %s\n" +
                         "Copyright © %s Alexander Steinhauer",
                 getVersionName(context),
                 Calendar.getInstance().get(Calendar.YEAR));
     }
 
-    public static List<Integer> indexesOf(String text, String word)
-    {
+    public static List<Integer> indexesOf(String text, String word) {
         List<Integer> indexes = new ArrayList<>();
         int offset = 0;
 
-        while (text.contains(word))
-        {
+        while (text.contains(word)) {
             int start = text.indexOf(word);
             int end = start + word.length();
 
@@ -344,18 +281,15 @@ public final class Utils
         return indexes;
     }
 
-    public static boolean hasFlag(int value, int flag)
-    {
+    public static boolean hasFlag(int value, int flag) {
         return (value & flag) == flag;
     }
 
-    public static int addFlag(int value, int flag)
-    {
+    public static int addFlag(int value, int flag) {
         return value | flag;
     }
 
-    public static int removeFlag(int value, int flag)
-    {
+    public static int removeFlag(int value, int flag) {
         return flag & ~value;
     }
 }

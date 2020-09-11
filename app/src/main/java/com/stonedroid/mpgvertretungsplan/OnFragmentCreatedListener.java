@@ -1,6 +1,5 @@
 package com.stonedroid.mpgvertretungsplan;
 
-public interface OnFragmentCreatedListener
-{
+public interface OnFragmentCreatedListener {
     void onCreated();
 }

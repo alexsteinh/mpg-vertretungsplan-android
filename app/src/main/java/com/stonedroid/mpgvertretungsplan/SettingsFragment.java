@@ -21,8 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class SettingsFragment extends PreferenceFragmentCompat
-{
+public class SettingsFragment extends PreferenceFragmentCompat {
     public static final String TAG = SettingsFragment.class.getSimpleName();
 
     public static final String SHOW_ALL = "Alle anzeigen";
@@ -39,8 +38,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
     private Set<String> subjectKeys = subjectMap.keySet();
 
     @Override
-    public void onCreatePreferences(Bundle bundle, String s)
-    {
+    public void onCreatePreferences(Bundle bundle, String s) {
         MainActivity.registerPreferencesChanges = false;
 
         context = getActivity();
@@ -61,8 +59,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
     }
 
     // Add the grade preference to the fragment
-    private void addGradePreference()
-    {
+    private void addGradePreference() {
         // Add preference category
         PreferenceCategory category = new PreferenceCategory(context);
         category.setTitle(R.string.general);
@@ -76,7 +73,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         // Get all grade names for preference entries
         List<String> names = Grade.getGradeNames();
         // Convert to CharSequences because preference only support CharSequences
-        CharSequence[] charNames =  new CharSequence[names.size()];
+        CharSequence[] charNames = new CharSequence[names.size()];
         charNames = names.toArray(charNames);
         // Set entries/entry values
         gradePref.setEntries(charNames);
@@ -90,8 +87,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
                     .findPreference(getString(R.string.saved_filter_enabled));
 
             String strGrade = (String) newValue;
-            if (filterPref != null)
-            {
+            if (filterPref != null) {
                 filterPref.setEnabled(!(!strGrade.equals("11") && !strGrade.equals("12")));
             }
 
@@ -102,8 +98,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         showValue(gradePref);
     }
 
-    private void addCustomizationPreferences()
-    {
+    private void addCustomizationPreferences() {
         // Add new preference category
         PreferenceCategory category = new PreferenceCategory(context);
         category.setTitle(getString(R.string.pref_category_customizing));
@@ -122,8 +117,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
             {
                 showValue(preference, newValue);
                 FragmentActivity parent = getActivity();
-                if (parent != null)
-                {
+                if (parent != null) {
                     parent.recreate();
                 }
                 return true;
@@ -152,8 +146,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         }
     }
 
-    private void addNotificationPreference()
-    {
+    private void addNotificationPreference() {
         PreferenceCategory category = new PreferenceCategory(context);
         category.setTitle(getString(R.string.pref_category_notifications));
         screen.addPreference(category);
@@ -164,8 +157,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         screen.addPreference(enabled);
     }
 
-    private void addFilterPreference()
-    {
+    private void addFilterPreference() {
         // Add new preference category
         PreferenceCategory category = new PreferenceCategory(context);
         category.setTitle(R.string.pref_category_filter);
@@ -189,8 +181,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
         CheckBoxPreference multi_enabled = new CheckBoxPreference(context);
         multi_enabled.setKey(getString(R.string.saved_filter_multi_select_enabled));
         multi_enabled.setTitle(getString(R.string.pref_title_filter_multi_select_enabled));
-        if (preferences.getBoolean(getString(R.string.saved_filter_multi_select_enabled), false))
-        {
+        if (preferences.getBoolean(getString(R.string.saved_filter_multi_select_enabled), false)) {
             multi_enabled.setSummary(getString(R.string.pref_summary_filter_multi_select_enabled));
         }
         multi_enabled.setOnPreferenceChangeListener((preference, newValue) ->
@@ -199,12 +190,9 @@ public class SettingsFragment extends PreferenceFragmentCompat
             deleteFilterPreferences();
             changeFilterSettings(multiEnabled);
             addFilterPreferences2(multiEnabled);
-            if (multiEnabled)
-            {
+            if (multiEnabled) {
                 multi_enabled.setSummary(getString(R.string.pref_summary_filter_multi_select_enabled));
-            }
-            else
-            {
+            } else {
                 multi_enabled.setSummary("");
             }
 
@@ -215,12 +203,9 @@ public class SettingsFragment extends PreferenceFragmentCompat
         addFilterPreferences2(preferences.getBoolean(getString(R.string.saved_filter_multi_select_enabled), false));
     }
 
-    private void addFilterPreferences2(boolean multiEnabled)
-    {
-        if (!multiEnabled)
-        {
-            for (String subject : subjectKeys)
-            {
+    private void addFilterPreferences2(boolean multiEnabled) {
+        if (!multiEnabled) {
+            for (String subject : subjectKeys) {
                 ListPreference preference = new ListPreference(context);
                 preference.setKey(String.format("filter_enabled_%s", subject));
                 preference.setTitle(subject);
@@ -234,8 +219,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
                 String[] options_with_notices = new String[options.length];
                 System.arraycopy(options, 0, options_with_notices, 0, options.length);
 
-                for (int i = 2; i < options_with_notices.length; i++)
-                {
+                for (int i = 2; i < options_with_notices.length; i++) {
                     options_with_notices[i] = options_with_notices[i].charAt(0) >= 97
                             ? options_with_notices[i].concat(MINOR_SUBJECT_NOTICE)
                             : options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
@@ -253,11 +237,8 @@ public class SettingsFragment extends PreferenceFragmentCompat
                 showValue(preference);
                 preference.setDependency(getString(R.string.saved_filter_enabled));
             }
-        }
-        else
-        {
-            for (String subject : subjectKeys)
-            {
+        } else {
+            for (String subject : subjectKeys) {
                 MultiSelectListPreference preference = new MultiSelectListPreference(context);
                 preference.setKey(String.format("filter_enabled_%s", subject));
                 preference.setTitle(subject);
@@ -269,8 +250,7 @@ public class SettingsFragment extends PreferenceFragmentCompat
                 String[] options_with_notices = new String[options.length];
                 System.arraycopy(options, 0, options_with_notices, 0, options.length);
 
-                for (int i = 0; i < options_with_notices.length; i++)
-                {
+                for (int i = 0; i < options_with_notices.length; i++) {
                     options_with_notices[i] = options_with_notices[i].charAt(0) >= 97
                             ? options_with_notices[i].concat(MINOR_SUBJECT_NOTICE)
                             : options_with_notices[i].concat(MAJOR_SUBJECT_NOTICE);
@@ -291,50 +271,35 @@ public class SettingsFragment extends PreferenceFragmentCompat
         }
     }
 
-    private void changeFilterSettings(boolean toMulti)
-    {
+    private void changeFilterSettings(boolean toMulti) {
         MainActivity.registerPreferencesChanges = false;
         SharedPreferences.Editor editor = preferences.edit();
 
-        for (String subject : subjectKeys)
-        {
+        for (String subject : subjectKeys) {
             String key = String.format("filter_enabled_%s", subject);
-            if (toMulti)
-            {
+            if (toMulti) {
                 String oldValue = preferences.getString(key, null);
                 HashSet<String> newValues = new HashSet<>();
-                if (oldValue != null && !oldValue.equals(SHOW_NOTHING))
-                {
-                    if (oldValue.equals(SHOW_ALL))
-                    {
+                if (oldValue != null && !oldValue.equals(SHOW_NOTHING)) {
+                    if (oldValue.equals(SHOW_ALL)) {
                         newValues.addAll(subjectMap.get(subject));
-                    }
-                    else
-                    {
+                    } else {
                         newValues.add(oldValue);
                     }
                 }
 
                 editor.remove(key);
                 editor.putStringSet(key, newValues);
-            }
-            else
-            {
+            } else {
                 Set<String> oldValues = preferences.getStringSet(key, null);
                 String newValue = null;
 
-                if (oldValues != null)
-                {
-                    if (oldValues.isEmpty())
-                    {
+                if (oldValues != null) {
+                    if (oldValues.isEmpty()) {
                         newValue = SHOW_NOTHING;
-                    }
-                    else if (oldValues.size() == subjectMap.get(subject).size())
-                    {
+                    } else if (oldValues.size() == subjectMap.get(subject).size()) {
                         newValue = SHOW_ALL;
-                    }
-                    else
-                    {
+                    } else {
                         String[] _oldValues = new String[oldValues.size()];
                         _oldValues = oldValues.toArray(_oldValues);
                         Arrays.sort(_oldValues);
@@ -347,63 +312,48 @@ public class SettingsFragment extends PreferenceFragmentCompat
                 editor.putString(key, newValue);
             }
         }
-        
+
         editor.apply();
         MainActivity.registerPreferencesChanges = true;
     }
 
-    private void deleteFilterPreferences()
-    {
-        for (String key : subjectKeys)
-        {
+    private void deleteFilterPreferences() {
+        for (String key : subjectKeys) {
             Preference preference = screen.findPreference((String.format("filter_enabled_%s", key)));
             screen.removePreference(preference);
         }
     }
 
-    private void showValue(ListPreference preference)
-    {
+    private void showValue(ListPreference preference) {
         showValue(preference, preferences.getString(preference.getKey(), null));
     }
 
-    private void showValue(MultiSelectListPreference preference)
-    {
+    private void showValue(MultiSelectListPreference preference) {
         showValue(preference, preferences.getStringSet(preference.getKey(), null));
     }
 
-    private void showValue(Preference preference, Object value)
-    {
-        if (value != null)
-        {
-            if (preference instanceof ListPreference)
-            {
+    private void showValue(Preference preference, Object value) {
+        if (value != null) {
+            if (preference instanceof ListPreference) {
                 preference.setSummary((String) value);
-            }
-            else if (preference instanceof MultiSelectListPreference)
-            {
+            } else if (preference instanceof MultiSelectListPreference) {
                 Set<String> _values = (Set<String>) value;
                 String[] values = new String[_values.size()];
                 values = _values.toArray(values);
 
                 Arrays.sort(values);
-                if (values.length == subjectMap.get(preference.getTitle()).size())
-                {
+                if (values.length == subjectMap.get(preference.getTitle()).size()) {
                     preference.setSummary(SHOW_ALL);
-                }
-                else if (values.length == 0)
-                {
+                } else if (values.length == 0) {
                     preference.setSummary(SHOW_NOTHING);
-                }
-                else
-                {
+                } else {
                     preference.setSummary(Utils.join(" | ", values));
                 }
             }
         }
     }
 
-    private void addAboutTheAppPreferences()
-    {
+    private void addAboutTheAppPreferences() {
         PreferenceCategory category = new PreferenceCategory(context);
         category.setTitle(R.string.pref_category_about_the_app);
         category.setOrder(0x1000);

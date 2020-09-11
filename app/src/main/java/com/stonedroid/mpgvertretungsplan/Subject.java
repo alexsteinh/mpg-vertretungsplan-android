@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Subject
-{
+public class Subject {
     private static final Map<String, List<String>> subjects = ImmutableMap.<String, List<String>>builder()
             .put("Basiskurs Mathematik", Arrays.asList("bm1", "bm2"))
             .put("Biologie", Arrays.asList("Bio1", "Bio2", "bio1", "bio2", "bio3"))
@@ -61,31 +60,26 @@ public class Subject
             .put("phil", "phil1")
             .build();
 
-    public static Map<String, List<String>> getAllSubjects()
-    {
+    public static Map<String, List<String>> getAllSubjects() {
         return subjects;
     }
 
-    public static Map<String, String> getSynonyms()
-    {
+    public static Map<String, String> getSynonyms() {
         return synonyms;
     }
 
-    public static List<String> getAllCourses()
-    {
+    public static List<String> getAllCourses() {
         ArrayList<String> coursesList = new ArrayList<>();
         Collection<List<String>> _coursesList = subjects.values();
 
-        for (List<String> courses : _coursesList)
-        {
+        for (List<String> courses : _coursesList) {
             coursesList.addAll(courses);
         }
 
         return coursesList;
     }
 
-    public static String getSubjectName(String course) throws Exception
-    {
+    public static String getSubjectName(String course) throws Exception {
         Collection<List<String>> _courses = subjects.values();
         List<String>[] courses = new List[_courses.size()];
         courses = _courses.toArray(courses);
@@ -94,10 +88,8 @@ public class Subject
         String[] names = new String[_names.size()];
         names = _names.toArray(names);
 
-        for (int i = 0; i < courses.length; i++)
-        {
-            if (courses[i].contains(course))
-            {
+        for (int i = 0; i < courses.length; i++) {
+            if (courses[i].contains(course)) {
                 return names[i];
             }
         }
