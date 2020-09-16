@@ -1,9 +1,13 @@
-package com.stonedroid.mpgvertretungsplan;
+package com.stonedroid.mpgvertretungsplan.settings;
 
 import android.content.Context;
 import android.os.Bundle;
 import androidx.fragment.app.FragmentActivity;
 import androidx.preference.*;
+import com.stonedroid.mpgvertretungsplan.MainActivity;
+import com.stonedroid.mpgvertretungsplan.R;
+import com.stonedroid.mpgvertretungsplan.Utils;
+import com.stonedroid.mpgvertretungsplan.theme.CustomThemes;
 import de.stonedroid.vertretungsplan.Grade;
 
 import java.util.List;

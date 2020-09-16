@@ -1,8 +1,9 @@
-package com.stonedroid.mpgvertretungsplan;
+package com.stonedroid.mpgvertretungsplan.theme;
 
 import android.app.Activity;
 import android.graphics.Color;
 import androidx.preference.PreferenceManager;
+import com.stonedroid.mpgvertretungsplan.R;
 
 import java.lang.reflect.Constructor;
 

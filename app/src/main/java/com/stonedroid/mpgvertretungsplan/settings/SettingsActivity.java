@@ -1,7 +1,8 @@
-package com.stonedroid.mpgvertretungsplan;
+package com.stonedroid.mpgvertretungsplan.settings;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import com.stonedroid.mpgvertretungsplan.theme.CustomThemes;
 
 public class SettingsActivity extends AppCompatActivity {
     @Override

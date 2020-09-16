@@ -9,7 +9,7 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
     private CharSequence[] titles;
 
     public ViewPagerAdapter(FragmentManager fm, Fragment[] fragments, CharSequence[] titles) {
-        super(fm);
+        super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
         this.fragments = fragments;
         this.titles = titles;
     }

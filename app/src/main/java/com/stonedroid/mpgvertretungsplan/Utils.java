@@ -1,26 +1,20 @@
 package com.stonedroid.mpgvertretungsplan;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
-import android.preference.PreferenceManager;
-import androidx.core.content.res.ResourcesCompat;
-import androidx.appcompat.app.AlertDialog;
 import android.util.TypedValue;
 import android.widget.TextView;
-import de.stonedroid.vertretungsplan.Grade;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.res.ResourcesCompat;
 import de.stonedroid.vertretungsplan.Replacement;
-import de.stonedroid.vertretungsplan.ReplacementTable;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public final class Utils {
     // Saves an object, which implements the Serializable interface.

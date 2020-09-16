@@ -2,31 +2,18 @@ package com.stonedroid.mpgvertretungsplan;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.content.res.ColorStateList;
+import android.graphics.BlendMode;
+import android.graphics.BlendModeColorFilter;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Build;
-import android.preference.PreferenceManager;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.tabs.TabLayout;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.viewpager.widget.ViewPager;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import androidx.cardview.widget.CardView;
-import androidx.appcompat.widget.Toolbar;
+import android.preference.PreferenceManager;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -37,17 +24,25 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.work.Constraints;
-import androidx.work.NetworkType;
-import androidx.work.PeriodicWorkRequest;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.viewpager.widget.ViewPager;
 import androidx.work.WorkManager;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
+import com.google.common.collect.ImmutableSet;
+import com.stonedroid.mpgvertretungsplan.settings.SettingsActivity;
+import com.stonedroid.mpgvertretungsplan.theme.CustomTheme;
+import com.stonedroid.mpgvertretungsplan.theme.CustomThemes;
 import de.stonedroid.vertretungsplan.*;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
@@ -82,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Get VersionCode of this application
@@ -145,6 +139,27 @@ public class MainActivity extends AppCompatActivity {
             if (oldVersionCode <= 17) {
                 editor.remove("init_preferences");
                 editor.putBoolean(getString(R.string.saved_offline_available), false);
+            }
+
+            // - Delete notifications
+            // - Clean up preferences
+            if (oldVersionCode <= 21) {
+                editor.apply();
+                disableNotifications();
+                deleteNotificationChannel();
+
+                Set<String> neededPreferences = ImmutableSet.of(
+                        "saved_grade",
+                        "saved_first_time",
+                        "saved_offline_available",
+                        "saved_theme",
+                        "saved_version_code",
+                        "saved_rounded_corners",
+                        "saved_swipe_refresh_enabled"
+                );
+                Set<String> legacyPreferences = new HashSet<>(preferences.getAll().keySet());
+                legacyPreferences.removeAll(neededPreferences);
+                legacyPreferences.forEach(editor::remove);
             }
 
             editor.apply();
@@ -441,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Adds a zero if date.str() has length == 1
     private String toDate(int date) {
-        return date < 10 ? "0" + String.valueOf(date) : String.valueOf(date);
+        return date < 10 ? "0" + date : String.valueOf(date);
     }
 
     // Adds a zero if date.str() has length == 1
@@ -457,8 +472,12 @@ public class MainActivity extends AppCompatActivity {
     // Returns whether a network is available
     private boolean isNetworkAvailable() {
         ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo info = manager.getActiveNetworkInfo();
-        return info != null && info.isConnected();
+        Network network = manager.getActiveNetwork();
+        if (network == null) {
+            return false;
+        }
+
+        return manager.getNetworkCapabilities(network).hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
     }
 
     @Override
@@ -479,7 +498,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         for (int i = 0; i < menu.size(); i++) {
-            menu.getItem(i).getIcon().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+            menu.getItem(i).getIcon().setColorFilter(new BlendModeColorFilter(color, BlendMode.SRC_ATOP));
         }
 
         return super.onCreateOptionsMenu(menu);
@@ -591,12 +610,6 @@ public class MainActivity extends AppCompatActivity {
                     .setActionTextColor(theme.getActionTextColor())
                     .show();
         }
-    }
-
-    // Show all replacements and messages of the ReplacementTable
-    // onto the main layout of this activity.
-    private void showTable(ReplacementTable table) {
-        showTables(new ReplacementTable[]{table});
     }
 
     // Shows all replacements and messages of all ReplacementTables
@@ -730,7 +743,8 @@ public class MainActivity extends AppCompatActivity {
 
     private View createProgressBar() {
         ProgressBar bar = new ProgressBar(this);
-        bar.getIndeterminateDrawable().setColorFilter(theme.getIndicatorColor(), PorterDuff.Mode.SRC_IN);
+        bar.getIndeterminateDrawable()
+                .setColorFilter(new BlendModeColorFilter(theme.getIndicatorColor(), BlendMode.SRC_IN));
         bar.setMinimumHeight(dpToPx(32));
         return bar;
     }
@@ -946,7 +960,7 @@ public class MainActivity extends AppCompatActivity {
         //card.setMinimumHeight(dpToPx(32));
         card.setCardElevation(dpToPx(1));
         card.setRadius(dpToPx(preferences.getBoolean(getString(R.string.saved_rounded_corners), true) ? 8 : 0));
-        card.getBackground().setColorFilter(theme.getCardColor(), PorterDuff.Mode.SRC);
+        card.getBackground().setColorFilter(new BlendModeColorFilter(theme.getCardColor(), BlendMode.SRC));
         return card;
     }
 

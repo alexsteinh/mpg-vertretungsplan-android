@@ -1,7 +1,8 @@
-package com.stonedroid.mpgvertretungsplan;
+package com.stonedroid.mpgvertretungsplan.theme;
 
 import android.app.Activity;
 import android.graphics.Color;
+import com.stonedroid.mpgvertretungsplan.Utils;
 
 public abstract class SimpleCustomTheme extends CustomTheme {
     public SimpleCustomTheme(Activity context) {
