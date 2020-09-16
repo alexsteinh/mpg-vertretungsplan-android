@@ -60,15 +60,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         gradePref.setOnPreferenceChangeListener((preference, newValue) ->
         {
             showValue((ListPreference) preference, (String) newValue);
-
-            CheckBoxPreference filterPref = screen.getPreferenceManager()
-                    .findPreference(getString(R.string.saved_filter_enabled));
-
-            String strGrade = (String) newValue;
-            if (filterPref != null) {
-                filterPref.setEnabled(!(!strGrade.equals("11") && !strGrade.equals("12")));
-            }
-
             return true;
         });
         // Add preference to fragment

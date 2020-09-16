@@ -4,13 +4,12 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.*;
 import android.content.res.ColorStateList;
-import android.graphics.BlendMode;
-import android.graphics.BlendModeColorFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -31,6 +30,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.graphics.BlendModeColorFilterCompat;
+import androidx.core.graphics.BlendModeCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager.widget.ViewPager;
 import androidx.work.WorkManager;
@@ -472,6 +473,11 @@ public class MainActivity extends AppCompatActivity {
     // Returns whether a network is available
     private boolean isNetworkAvailable() {
         ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (Build.VERSION.SDK_INT < 28) {
+            NetworkInfo info = manager.getActiveNetworkInfo();
+            return info != null && info.isConnected();
+        }
+
         Network network = manager.getActiveNetwork();
         if (network == null) {
             return false;
@@ -498,7 +504,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         for (int i = 0; i < menu.size(); i++) {
-            menu.getItem(i).getIcon().setColorFilter(new BlendModeColorFilter(color, BlendMode.SRC_ATOP));
+            menu.getItem(i).getIcon().setColorFilter(BlendModeColorFilterCompat
+                    .createBlendModeColorFilterCompat(color, BlendModeCompat.SRC_ATOP));
         }
 
         return super.onCreateOptionsMenu(menu);
@@ -744,7 +751,8 @@ public class MainActivity extends AppCompatActivity {
     private View createProgressBar() {
         ProgressBar bar = new ProgressBar(this);
         bar.getIndeterminateDrawable()
-                .setColorFilter(new BlendModeColorFilter(theme.getIndicatorColor(), BlendMode.SRC_IN));
+                .setColorFilter(BlendModeColorFilterCompat
+                        .createBlendModeColorFilterCompat(theme.getIndicatorColor(), BlendModeCompat.SRC_IN));
         bar.setMinimumHeight(dpToPx(32));
         return bar;
     }
@@ -960,7 +968,8 @@ public class MainActivity extends AppCompatActivity {
         //card.setMinimumHeight(dpToPx(32));
         card.setCardElevation(dpToPx(1));
         card.setRadius(dpToPx(preferences.getBoolean(getString(R.string.saved_rounded_corners), true) ? 8 : 0));
-        card.getBackground().setColorFilter(new BlendModeColorFilter(theme.getCardColor(), BlendMode.SRC));
+        card.getBackground().setColorFilter(BlendModeColorFilterCompat
+                .createBlendModeColorFilterCompat(theme.getCardColor(), BlendModeCompat.SRC));
         return card;
     }
 
