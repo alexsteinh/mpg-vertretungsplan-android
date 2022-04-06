@@ -1,6 +1,5 @@
 package com.stonedroid.mpgvertretungsplan;
 
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.*;
 import android.content.res.ColorStateList;
@@ -34,7 +33,6 @@ import androidx.core.graphics.BlendModeColorFilterCompat;
 import androidx.core.graphics.BlendModeCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager.widget.ViewPager;
-import androidx.work.WorkManager;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.common.collect.ImmutableSet;
@@ -73,6 +71,24 @@ public class MainActivity extends AppCompatActivity {
 
     private void log(String message) {
         Log.d(TAG + "(" + toString().split("@")[1] + ")", message);
+    }
+
+    private boolean shouldShowDeathMessage() {
+        Calendar calendar = Calendar.getInstance();
+        int month = calendar.get(Calendar.MONTH);
+        int year = calendar.get(Calendar.YEAR);
+        return year > 2022 || (year == 2022 && month >= Calendar.AUGUST);
+    }
+
+    private void showDeathAlert(Context context) {
+        AlertDialog dialog = new AlertDialog.Builder(context)
+                .setTitle(context.getString(R.string.deathalert_title))
+                .setMessage(context.getString(R.string.deathalert_message))
+                .setPositiveButton("OK", null)
+                .create();
+
+        dialog.setOnDismissListener(sender -> finish());
+        dialog.show();
     }
 
     @Override
@@ -146,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
             // - Clean up preferences
             if (oldVersionCode <= 21) {
                 editor.apply();
-                disableNotifications();
                 deleteNotificationChannel();
 
                 Set<String> neededPreferences = ImmutableSet.of(
@@ -160,7 +175,9 @@ public class MainActivity extends AppCompatActivity {
                 );
                 Set<String> legacyPreferences = new HashSet<>(preferences.getAll().keySet());
                 legacyPreferences.removeAll(neededPreferences);
-                legacyPreferences.forEach(editor::remove);
+                for (String legacyPreference : legacyPreferences) {
+                    editor.remove(legacyPreference);
+                }
             }
 
             editor.apply();
@@ -168,6 +185,11 @@ public class MainActivity extends AppCompatActivity {
 
         // Set theme (with customizations)
         theme = CustomThemes.changeTheme(this, false);
+
+        if (shouldShowDeathMessage()) {
+            showDeathAlert(this);
+            return;
+        }
 
         setContentView(R.layout.activity_main);
 
@@ -304,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             log("Second time!");
             // Use user defined grade and download the grade
-            String grade = preferences.getString(getString(R.string.saved_grade), null);
+            Grade grade = Grade.parse(preferences.getString(getString(R.string.saved_grade), null));
             if (grade != null) {
                 tables = (ReplacementTable[]) getLastCustomNonConfigurationInstance();
                 if (tables != null) {
@@ -315,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
                     if (isNetworkAvailable()) {
                         // Download from internet
                         log("Download tables");
-                        downloadTablesAndShow(Grade.parse(grade), true, false);
+                        downloadTablesAndShow(grade, true, false);
                     } else {
                         // Is there an offline version available?
                         boolean canDoOffline = preferences.getBoolean(getString(R.string.saved_offline_available), false);
@@ -332,31 +354,6 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 createGradeDialog().show();
             }
-        }
-    }
-
-    private void disableNotifications() {
-        /*String id = preferences.getString(getString(R.string.saved_worker_id), null);
-        if (id != null)
-        {
-            WorkManager.getInstance().cancelWorkById(UUID.fromString(id));
-        }*/
-
-        WorkManager.getInstance(this).cancelAllWork();
-    }
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            String name = getString(R.string.notification_channel_name);
-            String description = getString(R.string.notification_channel_description);
-
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(channel);
         }
     }
 
